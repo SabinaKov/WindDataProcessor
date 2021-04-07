@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31129.286
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MV", "MV\MV.csproj", "{3FA596C9-8C3B-4697-8CB3-36F4D6F48A91}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindDataProcessing", "WindDataProcessing\WindDataProcessing.csproj", "{A5E01D0C-AC53-4C75-A18A-CC332E212248}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3FA596C9-8C3B-4697-8CB3-36F4D6F48A91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FA596C9-8C3B-4697-8CB3-36F4D6F48A91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FA596C9-8C3B-4697-8CB3-36F4D6F48A91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FA596C9-8C3B-4697-8CB3-36F4D6F48A91}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5E01D0C-AC53-4C75-A18A-CC332E212248}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5E01D0C-AC53-4C75-A18A-CC332E212248}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5E01D0C-AC53-4C75-A18A-CC332E212248}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5E01D0C-AC53-4C75-A18A-CC332E212248}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EFA49C3D-7781-494B-BA53-0CB017DBEA28}
+	EndGlobalSection
+EndGlobal

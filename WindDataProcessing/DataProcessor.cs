@@ -92,6 +92,8 @@ namespace WindDataProcessing
                 default:
                     throw new Exception("Not set SourceDataType");
             }
+            Console.WriteLine($"Load Cases Loaded.");
+            Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
             return loadCases;
         }
 
@@ -218,6 +220,7 @@ namespace WindDataProcessing
             }
             await package.SaveAsync();
             Console.WriteLine("Excel file with Levels and their Time Shares was saved to the Results Directory:");
+            Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
             Console.WriteLine(file.DirectoryName);
         }
 

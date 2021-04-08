@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Threading.Tasks;
 using WindDataProcessing;
 
 namespace GAMESA_01
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             try
             {
@@ -21,7 +22,7 @@ namespace GAMESA_01
                 dataProcessor.SourceDataColumn.MY = 7;
                 dataProcessor.SourceDataColumn.MZ = 9;
                 dataProcessor.NumberOfLevels = 144;
-                dataProcessor.Process();
+                await dataProcessor.Process();
             }
             catch (Exception ex)
             {

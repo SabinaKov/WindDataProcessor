@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OfficeOpenXml;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -25,13 +26,14 @@ namespace WindDataProcessing
         public SourceDataColumnPosition SourceDataColumn { get; set; }
         public int NumberOfLevels { get; set; }
 
-        public void Process()
+        public async Task Process()
         {
             List<LoadCase> loadCasesWithoutLoadStates = LoadLoadCaseData();
             List<LoadCase> loadCases = PopulateLoadCasesWithLoadStates(loadCasesWithoutLoadStates);
             (Dictionary<Enums.LoadStateType, double> loadMins, Dictionary<Enums.LoadStateType, double> loadMaxes) = FindMinsAndMaxes(loadCases);
             Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels = DefineLoadStateLevels(loadMins, loadMaxes);
             PopulateLoadStateLevelsByTimeShares(loadStateLevels, loadCases);
+            await SaveExcelFile(loadStateLevels);
         }
 
         private List<LoadCase> LoadLoadCaseData()
@@ -195,6 +197,34 @@ namespace WindDataProcessing
                 {
                     throw new Exception($"Sum of Time Shares at Load State Type: {levels.Key} is not equal to 1, but is {timeShare}.");
                 }
+            }
+        }
+        private async Task SaveExcelFile(Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels)
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            FileInfo file = new FileInfo(ResultsDirectoryPath + @"\Levels.xlsx");
+            DeleteIfExists(file);
+            using var package = new ExcelPackage(file);
+            var ws = package.Workbook.Worksheets.Add("Levels");
+            int i = 0;
+            foreach (KeyValuePair<Enums.LoadStateType, List<Level>> loadStateLevel in loadStateLevels)
+            {
+                int baseColumn = 2 + i * 6;
+                var header = ws.Cells[2, baseColumn].Value = loadStateLevel.Key;
+                var range = ws.Cells[3, baseColumn].LoadFromCollection(loadStateLevels[loadStateLevel.Key], true);
+                range.AutoFitColumns();
+                i++;
+            }
+            await package.SaveAsync();
+            Console.WriteLine("Excel file with Levels and their Time Shares was saved to the Results Directory:");
+            Console.WriteLine(file.DirectoryName);
+        }
+
+        private void DeleteIfExists(FileInfo file)
+        {
+            if (file.Exists)
+            {
+                file.Delete();
             }
         }
     }

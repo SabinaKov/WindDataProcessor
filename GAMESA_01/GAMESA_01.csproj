@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MV\MV.csproj" />
+    <ProjectReference Include="..\WindDataProcessing\WindDataProcessing.csproj" />
   </ItemGroup>
 
 </Project>

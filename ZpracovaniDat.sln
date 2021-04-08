@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MV", "MV\MV.csproj", "{3FA5
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindDataProcessing", "WindDataProcessing\WindDataProcessing.csproj", "{A5E01D0C-AC53-4C75-A18A-CC332E212248}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GAMESA_01", "GAMESA_01\GAMESA_01.csproj", "{22C966FA-2919-4D7B-822D-627D05256295}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{A5E01D0C-AC53-4C75-A18A-CC332E212248}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5E01D0C-AC53-4C75-A18A-CC332E212248}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5E01D0C-AC53-4C75-A18A-CC332E212248}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22C966FA-2919-4D7B-822D-627D05256295}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22C966FA-2919-4D7B-822D-627D05256295}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22C966FA-2919-4D7B-822D-627D05256295}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22C966FA-2919-4D7B-822D-627D05256295}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

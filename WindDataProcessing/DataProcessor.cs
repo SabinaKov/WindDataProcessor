@@ -28,6 +28,7 @@ namespace WindDataProcessing
 
         public async Task Process()
         {
+            Console.WriteLine("Process started!");
             List<LoadCase> loadCasesWithoutLoadStates = LoadLoadCaseData();
             List<LoadCase> loadCases = PopulateLoadCasesWithLoadStates(loadCasesWithoutLoadStates);
             (Dictionary<Enums.LoadStateType, double> loadMins, Dictionary<Enums.LoadStateType, double> loadMaxes) = FindMinsAndMaxes(loadCases);

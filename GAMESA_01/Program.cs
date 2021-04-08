@@ -10,9 +10,18 @@ namespace GAMESA_01
         {
             try
             {
-                string loadCasesTimeShareFilePath = @"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1.csv";
-                string projectDirectoryPath = @"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1";
-                string resultsDirectoryPath = @"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData";
+                Console.WriteLine("Path to the CSV file with Load Case Time Shares: ");
+                // @"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1.csv"
+                string loadCasesTimeShareFilePath = Console.ReadLine();
+                Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
+                Console.WriteLine("Path to the Project Directory: ");
+                //@"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1"
+                string projectDirectoryPath = Console.ReadLine();
+                Console.WriteLine($"You set: {projectDirectoryPath}");
+                Console.WriteLine("Path to the Directory where results will be saved: ");
+                //@"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData"
+                string resultsDirectoryPath = Console.ReadLine();
+                Console.WriteLine($"You set: {resultsDirectoryPath}");
                 DataProcessor dataProcessor = new DataProcessor(loadCasesTimeShareFilePath, projectDirectoryPath, resultsDirectoryPath);
                 dataProcessor.SourceDataType = Enums.SourceDataType.CSV;
                 dataProcessor.SourceDataFirstLine = 19;

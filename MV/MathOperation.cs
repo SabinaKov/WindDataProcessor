@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MV
 {
-    public class MathOperations
+    public class MathOperation
     {
         internal static double AreaOfPartOfCircle(double radius, double delkaTetivy)
         {

@@ -30,7 +30,7 @@ namespace WindDataProcessing
         {
             Console.WriteLine("Process started!");
             List<LoadCase> loadCasesWithoutLoadStates = LoadLoadCaseData();
-            List<LoadCase> loadCases = PopulateLoadCasesWithLoadStates(loadCasesWithoutLoadStates);
+            List<LoadCase> loadCases = await PopulateLoadCasesWithLoadStatesAsync(loadCasesWithoutLoadStates);
             (Dictionary<Enums.LoadStateType, double> loadMins, Dictionary<Enums.LoadStateType, double> loadMaxes) = FindMinsAndMaxes(loadCases);
             Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels = DefineLoadStateLevels(loadMins, loadMaxes);
             PopulateLoadStateLevelsByTimeShares(loadStateLevels, loadCases);
@@ -58,7 +58,7 @@ namespace WindDataProcessing
             }
             return loadCases;
         }
-        private List<LoadCase> PopulateLoadCasesWithLoadStates(List<LoadCase> loadCasesWithoutLoadStates)
+        private async Task<List<LoadCase>> PopulateLoadCasesWithLoadStatesAsync(List<LoadCase> loadCasesWithoutLoadStates)
         {
             List<LoadCase> loadCases = new List<LoadCase>();
             switch (SourceDataType)
@@ -86,7 +86,7 @@ namespace WindDataProcessing
                             loadCase.LoadStates = loadStates;
                             loadCases.Add(loadCase);
                         }
-
+                        await Task.WhenAll();
                         break;
                     }
                 default:

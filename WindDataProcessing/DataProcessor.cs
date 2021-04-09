@@ -31,9 +31,9 @@ namespace WindDataProcessing
             Console.WriteLine("Process started!");
             List<LoadCase> loadCasesWithoutLoadStates = LoadLoadCaseData();
             List<LoadCase> loadCases = await PopulateLoadCasesWithLoadStatesAsync(loadCasesWithoutLoadStates);
-            (Dictionary<Enums.LoadStateType, double> loadMins, Dictionary<Enums.LoadStateType, double> loadMaxes) = FindMinsAndMaxes(loadCases);
+            (Dictionary<Enums.LoadStateType, double> loadMins, Dictionary<Enums.LoadStateType, double> loadMaxes) = await FindMinsAndMaxes(loadCases);
             Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels = DefineLoadStateLevels(loadMins, loadMaxes);
-            PopulateLoadStateLevelsByTimeShares(loadStateLevels, loadCases);
+            await PopulateLoadStateLevelsByTimeSharesAsync(loadStateLevels, loadCases);
             await SaveExcelFile(loadStateLevels);
         }
 
@@ -97,7 +97,7 @@ namespace WindDataProcessing
             return loadCases;
         }
 
-        private (Dictionary<Enums.LoadStateType, double> loadMins, Dictionary<Enums.LoadStateType, double> loadMaxes) FindMinsAndMaxes(List<LoadCase> loadCases)
+        private async Task<(Dictionary<Enums.LoadStateType, double> loadMins, Dictionary<Enums.LoadStateType, double> loadMaxes)> FindMinsAndMaxes(List<LoadCase> loadCases)
         {
             Dictionary<Enums.LoadStateType, double> loadMins = new Dictionary<Enums.LoadStateType, double>();
             loadMins.Add(Enums.LoadStateType.FX, loadCases.SelectMany(x => x.LoadStates.Select(y => y.FX)).Min());
@@ -122,6 +122,7 @@ namespace WindDataProcessing
             Console.WriteLine($"MY max: {loadMaxes[Enums.LoadStateType.MY]}");
             loadMaxes.Add(Enums.LoadStateType.MZ, loadCases.SelectMany(x => x.LoadStates.Select(y => y.MZ)).Max());
             Console.WriteLine($"MZ max: {loadMaxes[Enums.LoadStateType.MZ]}");
+            await Task.WhenAll();
             Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
             return (loadMins, loadMaxes);
         }
@@ -193,7 +194,7 @@ namespace WindDataProcessing
             Console.WriteLine("Load state levels defined.");
             return loadStateLevels;
         }
-        private void PopulateLoadStateLevelsByTimeShares(Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels, List<LoadCase> loadCases)
+        private async Task PopulateLoadStateLevelsByTimeSharesAsync(Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels, List<LoadCase> loadCases)
         {
             foreach (Enums.LoadStateType loadStateType in (Enums.LoadStateType[])Enum.GetValues(typeof(Enums.LoadStateType)))
             {
@@ -230,6 +231,7 @@ namespace WindDataProcessing
                 Console.WriteLine($"Time Shares of Load State Type {loadStateType} populated.");
                 Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
             }
+            await Task.WhenAll();
             UnityValidation(loadStateLevels);
         }
 
@@ -266,8 +268,8 @@ namespace WindDataProcessing
             }
             await package.SaveAsync();
             Console.WriteLine("Excel file with Levels and their Time Shares was saved to the Results Directory:");
-            Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
             Console.WriteLine(file.DirectoryName);
+            Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
         }
 
         private void DeleteIfExists(FileInfo file)

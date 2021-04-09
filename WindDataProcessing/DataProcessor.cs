@@ -132,16 +132,62 @@ namespace WindDataProcessing
             {
                 List<Level> levels = new List<Level>();
                 double min = loadMins[loadStateType];
-                double max = loadMaxes[loadStateType] + 0.1; // Becouse of populating with time shares.
-                double range = (max - min) / NumberOfLevels;
-                for (int l = 0; l < NumberOfLevels; l++)
+                double max = loadMaxes[loadStateType] + 0.1; // Because of populating with time shares.
+                double range = Math.Abs(max - min) / NumberOfLevels;
+                int numberOfNegativeLevels;
+                if (max > 0.0)
                 {
-                    Level level = new Level();
-                    level.Min = min + l * range;
-                    level.Mean = level.Min + range / 2.0;
-                    level.Max = level.Min + range;
-                    levels.Add(level);
+                    numberOfNegativeLevels = (int)Math.Floor(Math.Abs(min / range));
                 }
+                else
+                {
+                    numberOfNegativeLevels = NumberOfLevels;
+                }
+                double lastNegativeMax = -1.0;
+                if (min < 0)
+                {
+                    for (int l = 0; l < numberOfNegativeLevels; l++)
+                    {
+                        Level level = new Level();
+                        level.Min = min + l * range;
+                        level.Mean = level.Min + range / 2.0;
+                        level.Max = level.Min + range;
+                        levels.Add(level);
+                        if (l == numberOfNegativeLevels - 1)
+                        {
+                            lastNegativeMax = level.Max;
+                        }
+                    }
+                }
+                else
+                {
+                    numberOfNegativeLevels = 0;
+                }
+                if (max > 0)
+                {
+                    double positiveRange = max / (NumberOfLevels - numberOfNegativeLevels - 1);
+                    if (min < 0)
+                    {
+                        Level maxNegativeLevel = new Level();
+                        maxNegativeLevel.Min = lastNegativeMax;
+                        maxNegativeLevel.Mean = lastNegativeMax / 2.0;
+                        maxNegativeLevel.Max = 0.0;
+                        levels.Add(maxNegativeLevel);
+                        min = 0.0;
+                    }
+                    else
+                    {
+                        positiveRange = range;
+                    }
+                    for (int l = 0; l < NumberOfLevels - numberOfNegativeLevels - 1; l++)
+                    {
+                        Level level = new Level();
+                        level.Min = min + l * positiveRange;
+                        level.Mean = level.Min + positiveRange / 2.0;
+                        level.Max = level.Min + positiveRange;
+                        levels.Add(level);
+                    }
+                }               
                 loadStateLevels.Add(loadStateType, levels);
             }
             Console.WriteLine("Load state levels defined.");

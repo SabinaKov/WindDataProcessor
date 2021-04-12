@@ -8,7 +8,7 @@ namespace WindDataProcessing
     {
         public enum SourceDataType
         {
-            CSV
+            CSV, TXT
         }
         public enum LoadStateType
         {

@@ -3,11 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MV", "MV\MV.csproj", "{3FA596C9-8C3B-4697-8CB3-36F4D6F48A91}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MV", "MV\MV.csproj", "{3FA596C9-8C3B-4697-8CB3-36F4D6F48A91}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindDataProcessing", "WindDataProcessing\WindDataProcessing.csproj", "{A5E01D0C-AC53-4C75-A18A-CC332E212248}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindDataProcessing", "WindDataProcessing\WindDataProcessing.csproj", "{A5E01D0C-AC53-4C75-A18A-CC332E212248}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GAMESA_01", "GAMESA_01\GAMESA_01.csproj", "{22C966FA-2919-4D7B-822D-627D05256295}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GAMESA_01", "GAMESA_01\GAMESA_01.csproj", "{22C966FA-2919-4D7B-822D-627D05256295}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChinaVerification_01", "ChinaVerification_01\ChinaVerification_01.csproj", "{AA00A3D0-3770-4063-8881-0E20C9C0C668}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{22C966FA-2919-4D7B-822D-627D05256295}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22C966FA-2919-4D7B-822D-627D05256295}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22C966FA-2919-4D7B-822D-627D05256295}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA00A3D0-3770-4063-8881-0E20C9C0C668}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA00A3D0-3770-4063-8881-0E20C9C0C668}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA00A3D0-3770-4063-8881-0E20C9C0C668}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA00A3D0-3770-4063-8881-0E20C9C0C668}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -89,6 +89,32 @@ namespace WindDataProcessing
                         await Task.WhenAll();
                         break;
                     }
+                case Enums.SourceDataType.TXT:
+                    {
+                        foreach (LoadCase loadCase in loadCasesWithoutLoadStates)
+                        {
+                            string loadCaseFilePath = ProjectDirectoryPath + @"\" + loadCase.Name + ".txt";
+                            Dictionary<Tuple<int, int>, string> loadStateData = MV.FileProcessor.LoadDataFromFile_tableWithTabs(loadCaseFilePath);
+                            List<LoadState> loadStates = new List<LoadState>();
+                            int lastRow = loadStateData.Select(_ => _.Key.Item1).Max();
+                            loadCase.NumberOfLoadStates = lastRow;
+                            for (int row = SourceDataFirstLine - 1; row < lastRow; row++)
+                            {
+                                loadStates.Add(new LoadState
+                                {
+                                    FX = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FX - 1)]),
+                                    FY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FY - 1)]),
+                                    FZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FZ - 1)]),
+                                    MY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MY - 1)]),
+                                    MZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ - 1)])
+                                });
+                            }
+                            loadCase.LoadStates = loadStates;
+                            loadCases.Add(loadCase);
+                        }
+                        await Task.WhenAll();
+                        break;
+                    }
                 default:
                     throw new Exception("Not set SourceDataType");
             }
@@ -162,7 +188,7 @@ namespace WindDataProcessing
                 }
                 else
                 {
-                    numberOfNegativeLevels = 0;
+                    numberOfNegativeLevels = -1;
                 }
                 if (max > 0)
                 {

@@ -12,7 +12,7 @@ namespace WindDataProcessing
         }
         public enum LoadStateType
         {
-            FX, FY, FZ, MY, MZ
+            FX, FY, FZ, MY, MZ, Speed
         }
     }
 }

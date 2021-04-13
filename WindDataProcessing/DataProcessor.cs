@@ -25,15 +25,17 @@ namespace WindDataProcessing
         public int SourceDataFirstLine { get; set; }
         public SourceDataColumnPosition SourceDataColumn { get; set; }
         public int NumberOfLevels { get; set; }
+        public double ConvertSpeedMultiplyBy { get; set; } = 1.0;
 
         public async Task Process()
         {
             Console.WriteLine("Process started!");
             List<LoadCase> loadCasesWithoutLoadStates = LoadLoadCaseData();
             List<LoadCase> loadCases = await PopulateLoadCasesWithLoadStatesAsync(loadCasesWithoutLoadStates);
+            await CalculateLoadCaseAverageSpeeds(loadCases);
             (Dictionary<Enums.LoadStateType, double> loadMins, Dictionary<Enums.LoadStateType, double> loadMaxes) = await FindMinsAndMaxes(loadCases);
             Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels = DefineLoadStateLevels(loadMins, loadMaxes);
-            await PopulateLoadStateLevelsByTimeSharesAsync(loadStateLevels, loadCases);
+            await PopulateLoadStateLevelsByTimeAndRevSharesAsync(loadStateLevels, loadCases);
             await SaveExcelFile(loadStateLevels);
         }
 
@@ -80,7 +82,8 @@ namespace WindDataProcessing
                                     FY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FY-1)]),
                                     FZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FZ-1)]),
                                     MY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MY-1)]),
-                                    MZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ-1)])
+                                    MZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ-1)]),
+                                    Speed = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.Speed - 1)]) * ConvertSpeedMultiplyBy
                                 });
                             }
                             loadCase.LoadStates = loadStates;
@@ -106,7 +109,8 @@ namespace WindDataProcessing
                                     FY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FY - 1)]),
                                     FZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FZ - 1)]),
                                     MY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MY - 1)]),
-                                    MZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ - 1)])
+                                    MZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ - 1)]),
+                                    Speed = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.Speed - 1)]) * ConvertSpeedMultiplyBy
                                 });
                             }
                             loadCase.LoadStates = loadStates;
@@ -121,6 +125,11 @@ namespace WindDataProcessing
             Console.WriteLine($"Load Cases Loaded.");
             Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
             return loadCases;
+        }
+        private async Task CalculateLoadCaseAverageSpeeds(List<LoadCase> loadCases)
+        {
+            loadCases.ForEach(loadCase => loadCase.AverageSpeed = loadCase.LoadStates.Select(loadState => loadState.Speed).Average());
+            await Task.WhenAll();
         }
 
         private async Task<(Dictionary<Enums.LoadStateType, double> loadMins, Dictionary<Enums.LoadStateType, double> loadMaxes)> FindMinsAndMaxes(List<LoadCase> loadCases)
@@ -157,6 +166,10 @@ namespace WindDataProcessing
             Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels = new Dictionary<Enums.LoadStateType, List<Level>>();
             foreach (Enums.LoadStateType loadStateType in (Enums.LoadStateType[])Enum.GetValues(typeof(Enums.LoadStateType)))
             {
+                if (loadStateType == Enums.LoadStateType.Speed)
+                {
+                    continue;
+                }
                 List<Level> levels = new List<Level>();
                 double min = loadMins[loadStateType];
                 double max = loadMaxes[loadStateType] + 0.1; // Because of populating with time shares.
@@ -220,10 +233,14 @@ namespace WindDataProcessing
             Console.WriteLine("Load state levels defined.");
             return loadStateLevels;
         }
-        private async Task PopulateLoadStateLevelsByTimeSharesAsync(Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels, List<LoadCase> loadCases)
+        private async Task PopulateLoadStateLevelsByTimeAndRevSharesAsync(Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels, List<LoadCase> loadCases)
         {
             foreach (Enums.LoadStateType loadStateType in (Enums.LoadStateType[])Enum.GetValues(typeof(Enums.LoadStateType)))
             {
+                if (loadStateType == Enums.LoadStateType.Speed)
+                {
+                    continue;
+                }
                 foreach (LoadCase loadCase in loadCases)
                 {
                     foreach (LoadState loadState in loadCase.LoadStates)
@@ -251,10 +268,14 @@ namespace WindDataProcessing
                         }
                         loadStateLevels[loadStateType].Where(level => loadStateValue >= level.Min && loadStateValue < level.Max)
                                                       .ToList()
-                                                      .ForEach(x => x.TimeShare += loadCase.TimeShare / loadCase.NumberOfLoadStates);
+                                                      .ForEach(x =>
+                                                        {
+                                                            x.TimeShare += loadCase.TimeShare / loadCase.NumberOfLoadStates;
+                                                            x.RevShare += loadState.Speed * loadCase.TimeShare / (loadCase.NumberOfLoadStates * loadCase.AverageSpeed);
+                                                        });
                     }
                 }
-                Console.WriteLine($"Time Shares of Load State Type {loadStateType} populated.");
+                Console.WriteLine($"Time Shares and Revolution Shares of Load State Type {loadStateType} populated.");
                 Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
             }
             await Task.WhenAll();
@@ -266,13 +287,19 @@ namespace WindDataProcessing
             foreach (KeyValuePair<Enums.LoadStateType, List<Level>> levels in loadStateLevels)
             {
                 double timeShare = 0;
+                double revShare = 0;
                 foreach (Level level in levels.Value)
                 {
                     timeShare += level.TimeShare;
+                    revShare += level.RevShare;
                 }
                 if (timeShare < 0.99 || timeShare > 1.01)
                 {
                     throw new Exception($"Sum of Time Shares at Load State Type: {levels.Key} is not equal to 1, but is {timeShare}.");
+                }
+                if (revShare < 0.95 || revShare > 1.05)
+                {
+                    throw new Exception($"Sum of Revolution Shares at Load State Type: {levels.Key} is not equal to 1, but is {revShare}.");
                 }
             }
         }
@@ -293,7 +320,7 @@ namespace WindDataProcessing
                 i++;
             }
             await package.SaveAsync();
-            Console.WriteLine("Excel file with Levels and their Time Shares was saved to the Results Directory:");
+            Console.WriteLine("Excel file with Levels and their Time and Revolution Shares was saved to the Results Directory:");
             Console.WriteLine(file.DirectoryName);
             Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
         }

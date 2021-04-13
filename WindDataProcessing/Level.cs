@@ -10,5 +10,6 @@ namespace WindDataProcessing
         public double Mean { get; set; }
         public double Min { get; set; }
         public double TimeShare { get; set; }
+        public double RevShare { get; set; }
     }
 }

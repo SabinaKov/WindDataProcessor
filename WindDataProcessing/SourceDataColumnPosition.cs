@@ -11,5 +11,6 @@ namespace WindDataProcessing
         public int FZ { get; set; }
         public int MY { get; set; }
         public int MZ { get; set; }
+        public int Speed { get; set; }
     }
 }

@@ -30,6 +30,8 @@ namespace ChinaVerification_01
                 dataProcessor.SourceDataColumn.FZ = 7;
                 dataProcessor.SourceDataColumn.MY = 3;
                 dataProcessor.SourceDataColumn.MZ = 4;
+                dataProcessor.SourceDataColumn.Speed = 14;
+                dataProcessor.ConvertSpeedMultiplyBy = 60.0 / (2 * Math.PI); // rad/s --> rev/min
                 dataProcessor.NumberOfLevels = 144;
                 await dataProcessor.Process();
             }

@@ -28,5 +28,9 @@ namespace WindDataProcessing
         /// MZ [Nm]
         /// </summary>
         internal double MZ { get; set; }
+        /// <summary>
+        /// Speed [rev / min]
+        /// </summary>
+        internal double Speed { get; set; }
     }
 }

@@ -4,23 +4,23 @@ using WindDataProcessing;
 
 namespace GAMESA_01
 {
-    class Program
+    internal class Program
     {
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             try
             {
                 Console.WriteLine("Path to the CSV file with Load Case Time Shares: ");
                 // @"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1.csv"
-                string loadCasesTimeShareFilePath = @"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1.csv";//Console.ReadLine();
+                string loadCasesTimeShareFilePath = @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD.csv";//Console.ReadLine();
                 Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
                 Console.WriteLine("Path to the Project Directory: ");
                 //@"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1"
-                string projectDirectoryPath = @"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1";//Console.ReadLine();
+                string projectDirectoryPath = @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD";//Console.ReadLine();
                 Console.WriteLine($"You set: {projectDirectoryPath}");
                 Console.WriteLine("Path to the Directory where results will be saved: ");
                 //@"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData"
-                string resultsDirectoryPath = @"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData";//Console.ReadLine();
+                string resultsDirectoryPath = @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData";//Console.ReadLine();
                 Console.WriteLine($"You set: {resultsDirectoryPath}");
                 DataProcessor dataProcessor = new DataProcessor(loadCasesTimeShareFilePath, projectDirectoryPath, resultsDirectoryPath);
                 dataProcessor.SourceDataType = Enums.SourceDataType.CSV;
@@ -30,8 +30,26 @@ namespace GAMESA_01
                 dataProcessor.SourceDataColumn.FZ = 5;
                 dataProcessor.SourceDataColumn.MY = 7;
                 dataProcessor.SourceDataColumn.MZ = 9;
+                dataProcessor.SourceDataColumn.Speed = 11;
                 dataProcessor.NumberOfLevels = 144;
-                await dataProcessor.Process();
+
+                dataProcessor.CP = new CalculationParametersCollection()
+                {
+                    FgShaft = 243778.5,
+                    FgGearbox = 451260,
+                    AxialPreload = 0, //,500000
+                    FMB = new BearingParametersColection()
+                    {
+                        ContactAngle = 19
+                    },
+                    RMB = new BearingParametersColection()
+                    {
+                        ContactAngle = 11
+                    }
+                };
+
+                await dataProcessor.LDDlifesTester();
+                //await dataProcessor.Process(); - vytvoří LDD
             }
             catch (Exception ex)
             {

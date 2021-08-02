@@ -26,6 +26,17 @@ namespace WindDataProcessing
         public SourceDataColumnPosition SourceDataColumn { get; set; }
         public int NumberOfLevels { get; set; }
         public double ConvertSpeedMultiplyBy { get; set; } = 1.0;
+        public CalculationParametersCollection CP { get; set; }
+
+        public async Task LDDlifesTester()
+        {
+            Console.WriteLine("Process started!");
+            List<LoadCase> loadCasesWithoutLoadStates = LoadLoadCaseData();
+            List<LoadCase> loadCases = await PopulateLoadCasesWithLoadStatesAsync(loadCasesWithoutLoadStates);
+            await CalculateLoadCaseAverageSpeeds(loadCases);
+            await CalculateRadialReactions(loadCases);
+            await CalculateAxialReactions(loadCases);
+        }
 
         public async Task Process()
         {
@@ -41,9 +52,9 @@ namespace WindDataProcessing
 
         private List<LoadCase> LoadLoadCaseData()
         {
-            Dictionary<Tuple<int,int>, string> dataInTimeShareFile = MV.FileProcessor.LoadDataFromFile_csvSemicolon(LoadCasesTimeShareFilePath);
+            Dictionary<Tuple<int, int>, string> dataInTimeShareFile = MV.FileProcessor.LoadDataFromFile_csvSemicolon(LoadCasesTimeShareFilePath);
             List<LoadCase> loadCases = new List<LoadCase>();
-            foreach (KeyValuePair<Tuple<int,int>,string> timeShareItem in dataInTimeShareFile)
+            foreach (KeyValuePair<Tuple<int, int>, string> timeShareItem in dataInTimeShareFile)
             {
                 if (timeShareItem.Key.Item2 == 0)
                 {
@@ -60,6 +71,7 @@ namespace WindDataProcessing
             }
             return loadCases;
         }
+
         private async Task<List<LoadCase>> PopulateLoadCasesWithLoadStatesAsync(List<LoadCase> loadCasesWithoutLoadStates)
         {
             List<LoadCase> loadCases = new List<LoadCase>();
@@ -72,17 +84,17 @@ namespace WindDataProcessing
                             string loadCaseFilePath = ProjectDirectoryPath + @"\" + loadCase.Name + ".csv";
                             Dictionary<Tuple<int, int>, string> loadStateData = MV.FileProcessor.LoadDataFromFile_csvSemicolon(loadCaseFilePath);
                             List<LoadState> loadStates = new List<LoadState>();
-                            int lastRow = loadStateData.Select(_ => _.Key.Item1).Max();
-                            loadCase.NumberOfLoadStates = lastRow;
-                            for (int row = SourceDataFirstLine-1; row < lastRow; row++)
+                            int lastRow = loadStateData.Select(_ => _.Key.Item1).Max() + 1;
+                            loadCase.NumberOfLoadStates = lastRow - SourceDataFirstLine + 1;
+                            for (int row = SourceDataFirstLine - 1; row < lastRow; row++)
                             {
                                 loadStates.Add(new LoadState
                                 {
-                                    FX = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FX-1)]),
-                                    FY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FY-1)]),
-                                    FZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FZ-1)]),
-                                    MY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MY-1)]),
-                                    MZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ-1)]),
+                                    FX = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FX - 1)]),
+                                    FY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FY - 1)]),
+                                    FZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FZ - 1)]),
+                                    MY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MY - 1)]),
+                                    MZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ - 1)]),
                                     Speed = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.Speed - 1)]) * ConvertSpeedMultiplyBy
                                 });
                             }
@@ -99,8 +111,8 @@ namespace WindDataProcessing
                             string loadCaseFilePath = ProjectDirectoryPath + @"\" + loadCase.Name + ".txt";
                             Dictionary<Tuple<int, int>, string> loadStateData = MV.FileProcessor.LoadDataFromFile_tableWithTabs(loadCaseFilePath);
                             List<LoadState> loadStates = new List<LoadState>();
-                            int lastRow = loadStateData.Select(_ => _.Key.Item1).Max();
-                            loadCase.NumberOfLoadStates = lastRow;
+                            int lastRow = loadStateData.Select(_ => _.Key.Item1).Max() + 1;
+                            loadCase.NumberOfLoadStates = lastRow - SourceDataFirstLine + 1;
                             for (int row = SourceDataFirstLine - 1; row < lastRow; row++)
                             {
                                 loadStates.Add(new LoadState
@@ -126,6 +138,142 @@ namespace WindDataProcessing
             Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
             return loadCases;
         }
+
+        private async Task CalculateRadialReactions(List<LoadCase> loadCases)
+        {
+            const double B_ = 1825 / 1000.0;
+            const double E_ = 2397 / 1000.0;
+            const double a1 = 361.6 / 1000.0;
+            const double b1 = 185 / 1000.0;
+            const double a2 = 208.2 / 1000.0;
+            const double b2 = 150 / 1000.0;
+            const double A = a1 - b1 / 2.0;
+            const double B = B_ + a2 - b2 / 2.0;
+            const double C = 637.5 / 1000.0;
+            const double E = E_ - a2 + b2 / 2.0;
+            double FgShaftZ = -CP.FgShaft * MV.MathOperation.Cosd(6);
+            double FgGearboxZ = -CP.FgGearbox * MV.MathOperation.Cosd(6);
+            foreach (LoadCase loadCase in loadCases)
+            {
+                foreach (LoadState loadState in loadCase.LoadStates)
+                {
+                    double Fy1 = -loadState.FY + (loadState.MZ + loadState.FY * A) / (A + B);
+                    double Fy2 = (-loadState.MZ - loadState.FY * A) / (A + B);
+                    double Fz2 = (loadState.MY - loadState.FZ * A - FgShaftZ * (A + C) - FgGearboxZ * (A + B + E)) / (A + B);
+                    double Fz1 = -loadState.FZ - FgShaftZ - Fz2 - FgGearboxZ;
+                    double Fr1 = MV.MathOperation.LengthOfHypotenuse(Fy1, Fz1);
+                    double Fr2 = MV.MathOperation.LengthOfHypotenuse(Fy2, Fz2);
+                    loadState.FMBState = new BearingState()
+                    {
+                        FY = Fy1,
+                        FZ = Fz1,
+                        FR = Fr1
+                    };
+                    loadState.RMBState = new BearingState()
+                    {
+                        FY = Fy2,
+                        FZ = Fz2,
+                        FR = Fr2
+                    };
+                }
+            }
+            await Task.WhenAll();
+        }
+
+        private async Task CalculateAxialReactions(List<LoadCase> loadCases)
+        {
+            foreach (LoadCase loadCase in loadCases)
+            {
+                foreach (LoadState loadState in loadCase.LoadStates)
+                {
+                    double p = CalculateAxialForceRatio(loadState);
+                    double sumFa = loadState.FX + CP.FgShaft * MV.MathOperation.Sind(6) + CP.FgGearbox * MV.MathOperation.Sind(6);
+                    bool FaIsPossitive = sumFa >= 0;
+                    sumFa = Math.Abs(sumFa);
+                    double externalFaFMB = p * sumFa;
+                    double externalFaRMB = sumFa - externalFaFMB;
+                    double notInfluencedFaFMB; // neovlivněno druhým ložiskem
+                    double notInfluencedFaRMB;
+                    if (FaIsPossitive)
+                    {
+                        notInfluencedFaFMB = CP.AxialPreload + externalFaFMB;
+                        notInfluencedFaRMB = CP.AxialPreload - externalFaRMB;
+                    }
+                    else if (!FaIsPossitive)
+                    {
+                        notInfluencedFaFMB = CP.AxialPreload - externalFaFMB;
+                        notInfluencedFaRMB = CP.AxialPreload + externalFaRMB;
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                    double generatedFaFromRMBFr = CalculateGeneratedAxialForce(CP.RMB, loadState.RMBState.FR, notInfluencedFaRMB);
+                    double generatedFaFromFMBFr = CalculateGeneratedAxialForce(CP.FMB, loadState.FMBState.FR, notInfluencedFaFMB);
+                    if (FaIsPossitive)
+                    {
+                        if (generatedFaFromRMBFr >= generatedFaFromFMBFr && sumFa >= 0)
+                        {
+                            loadState.RMBState.FA = generatedFaFromRMBFr + notInfluencedFaRMB;
+                            loadState.FMBState.FA = generatedFaFromRMBFr + notInfluencedFaFMB;
+                        }
+                        else if (generatedFaFromRMBFr < generatedFaFromFMBFr && sumFa >= generatedFaFromFMBFr - generatedFaFromRMBFr)
+                        {
+                            loadState.RMBState.FA = generatedFaFromRMBFr + notInfluencedFaRMB;
+                            loadState.FMBState.FA = generatedFaFromRMBFr + notInfluencedFaFMB;
+                        }
+                        else if (generatedFaFromRMBFr < generatedFaFromFMBFr && sumFa < generatedFaFromFMBFr - generatedFaFromRMBFr)
+                        {
+                            loadState.RMBState.FA = generatedFaFromFMBFr - notInfluencedFaRMB;
+                            loadState.FMBState.FA = generatedFaFromFMBFr + notInfluencedFaFMB;
+                        }
+                        else
+                        {
+                            throw new Exception();
+                        }
+                    }
+                    else if (!FaIsPossitive)
+                    {
+                        if (generatedFaFromRMBFr <= generatedFaFromFMBFr && sumFa >= 0)
+                        {
+                            loadState.RMBState.FA = generatedFaFromFMBFr + notInfluencedFaRMB;
+                            loadState.FMBState.FA = generatedFaFromFMBFr + notInfluencedFaFMB;
+                        }
+                        else if (generatedFaFromRMBFr > generatedFaFromFMBFr && sumFa >= generatedFaFromFMBFr - generatedFaFromRMBFr)
+                        {
+                            loadState.RMBState.FA = generatedFaFromFMBFr + notInfluencedFaRMB;
+                            loadState.FMBState.FA = generatedFaFromFMBFr + notInfluencedFaFMB;
+                        }
+                        else if (generatedFaFromRMBFr > generatedFaFromFMBFr && sumFa < generatedFaFromFMBFr - generatedFaFromRMBFr)
+                        {
+                            loadState.RMBState.FA = generatedFaFromRMBFr + notInfluencedFaRMB;
+                            loadState.FMBState.FA = generatedFaFromRMBFr - notInfluencedFaFMB;
+                        }
+                        else
+                        {
+                            throw new Exception();
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                }
+            }
+
+            await Task.WhenAll();
+        }
+
+        private double CalculateAxialForceRatio(LoadState loadState)
+        {
+            return 1.0;
+        }
+
+        private double CalculateGeneratedAxialForce(BearingParametersColection bearing, double FR, double FA)
+        {
+            return 0.5 * FR / bearing.Y1;
+        }
+
         private async Task CalculateLoadCaseAverageSpeeds(List<LoadCase> loadCases)
         {
             loadCases.ForEach(loadCase => loadCase.AverageSpeed = loadCase.LoadStates.Select(loadState => loadState.Speed).Average());
@@ -161,6 +309,7 @@ namespace WindDataProcessing
             Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
             return (loadMins, loadMaxes);
         }
+
         private Dictionary<Enums.LoadStateType, List<Level>> DefineLoadStateLevels(Dictionary<Enums.LoadStateType, double> loadMins, Dictionary<Enums.LoadStateType, double> loadMaxes)
         {
             Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels = new Dictionary<Enums.LoadStateType, List<Level>>();
@@ -227,12 +376,13 @@ namespace WindDataProcessing
                         level.Max = level.Min + positiveRange;
                         levels.Add(level);
                     }
-                }               
+                }
                 loadStateLevels.Add(loadStateType, levels);
             }
             Console.WriteLine("Load state levels defined.");
             return loadStateLevels;
         }
+
         private async Task PopulateLoadStateLevelsByTimeAndRevSharesAsync(Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels, List<LoadCase> loadCases)
         {
             foreach (Enums.LoadStateType loadStateType in (Enums.LoadStateType[])Enum.GetValues(typeof(Enums.LoadStateType)))
@@ -251,18 +401,23 @@ namespace WindDataProcessing
                             case Enums.LoadStateType.FX:
                                 loadStateValue = loadState.FX;
                                 break;
+
                             case Enums.LoadStateType.FY:
                                 loadStateValue = loadState.FY;
                                 break;
+
                             case Enums.LoadStateType.FZ:
                                 loadStateValue = loadState.FZ;
                                 break;
+
                             case Enums.LoadStateType.MY:
                                 loadStateValue = loadState.MY;
                                 break;
+
                             case Enums.LoadStateType.MZ:
                                 loadStateValue = loadState.MZ;
                                 break;
+
                             default:
                                 throw new Exception("Wrong loadStateType");
                         }
@@ -303,6 +458,7 @@ namespace WindDataProcessing
                 }
             }
         }
+
         private async Task SaveExcelFile(Dictionary<Enums.LoadStateType, List<Level>> loadStateLevels)
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;

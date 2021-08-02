@@ -18,7 +18,7 @@ namespace MV
             return Math.Log(argument) / Math.Log(baze);
         }
 
-        internal static double Cosd(double hodnotaVeStupnich)
+        public static double Cosd(double hodnotaVeStupnich)
         {
             return Math.Cos(hodnotaVeStupnich * Math.PI / 180);
         }
@@ -28,12 +28,12 @@ namespace MV
             return Cosd(hodnotaVeStupnich) / Sind(hodnotaVeStupnich);
         }
 
-        internal static double Sind(double hodnotaVeStupnich)
+        public static double Sind(double hodnotaVeStupnich)
         {
             return Math.Sin(hodnotaVeStupnich * Math.PI / 180);
         }
 
-        internal static double Tand(double hodnotaVeStupnich)
+        public static double Tand(double hodnotaVeStupnich)
         {
             return Math.Tan(hodnotaVeStupnich * Math.PI / 180);
         }
@@ -47,7 +47,6 @@ namespace MV
         {
             return Math.Atan(hodnota) * 180 / Math.PI;
         }
-
 
         /// <summary>
         /// Trapezni integrace funkce
@@ -87,7 +86,7 @@ namespace MV
                 if (e > accuracy)
                 {
                     stepRecalcLim--;
-                    initStepNum = initStepNum * 2; // half step method
+                    initStepNum *= 2; // half step method
                 }
                 else
                 {
@@ -114,6 +113,11 @@ namespace MV
         internal static double PointsDistance(double Ax, double Ay, double Bx, double By)
         {
             return Math.Sqrt(Math.Pow(Ax - Bx, 2.0) + Math.Pow(Ay - By, 2.0));
+        }
+
+        public static double LengthOfHypotenuse(double cathetus1, double cathetus2)
+        {
+            return Math.Sqrt(Math.Pow(cathetus1, 2.0) + Math.Pow(cathetus2, 2.0));
         }
     }
 }

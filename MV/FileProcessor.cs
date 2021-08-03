@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace MV
 {
@@ -25,6 +26,7 @@ namespace MV
 
             return data;
         }
+
         public static Dictionary<Tuple<int, int>, string> LoadDataFromFile_csvSemicolon(string filePath)
         {
             return LoadTableDataFromFile(filePath, ';');
@@ -33,6 +35,37 @@ namespace MV
         public static Dictionary<Tuple<int, int>, string> LoadDataFromFile_tableWithTabs(string filePath)
         {
             return LoadTableDataFromFile(filePath, '\t');
+        }
+
+        public static void ExportCSV(List<List<string>> exportTabulka, string pracovniAdresar, string nazevSouboru)
+        {
+            if (pracovniAdresar == null)
+            {
+                throw new Exception();
+            }
+            if (!Directory.Exists(pracovniAdresar))
+            {
+                throw new Exception();
+            }
+            nazevSouboru += ".csv";
+
+            string cestaSouboru = pracovniAdresar + "\\" + nazevSouboru;
+            StreamWriter streamWriter = new StreamWriter(cestaSouboru, false, Encoding.UTF8);
+            for (int row = 0; row < exportTabulka[0].Count; row++)
+            {
+                string radek = "";
+                for (int column = 0; column < exportTabulka.Count; column++)
+                {
+                    string bunka = exportTabulka[column][row];
+                    radek += bunka;
+                    if (column != exportTabulka.Count - 1)
+                    {
+                        radek += ";";
+                    }
+                }
+                streamWriter.WriteLine(radek);
+            }
+            streamWriter.Close();
         }
     }
 }

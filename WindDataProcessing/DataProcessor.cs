@@ -36,6 +36,25 @@ namespace WindDataProcessing
             await CalculateLoadCaseAverageSpeeds(loadCases);
             await CalculateRadialReactions(loadCases);
             await CalculateAxialReactions(loadCases);
+            await CalculateEquivalentForces(loadCases);
+            List<List<string>> exportData = PrepareDataToExport(loadCases);
+            MV.FileProcessor.ExportCSV(exportData, ResultsDirectoryPath, @"results");
+        }
+
+        private List<List<string>> PrepareDataToExport(List<LoadCase> loadCases)
+        {
+            List<List<string>> data = new List<List<string>>();
+            foreach (LoadCase loadCase in loadCases)
+            {
+                List<string> row = new List<string>();
+                row.Add(loadCase.Name);
+                row.Add(loadCase.FReqFMB.ToString());
+                row.Add(loadCase.FAeqFMB.ToString());
+                row.Add(loadCase.FReqRMB.ToString());
+                row.Add(loadCase.FAeqRMB.ToString());
+                data.Add(row);
+            }
+            return data;
         }
 
         public async Task Process()
@@ -186,30 +205,18 @@ namespace WindDataProcessing
             {
                 foreach (LoadState loadState in loadCase.LoadStates)
                 {
-                    double p = CalculateAxialForceRatio(loadState);
                     double sumFa = loadState.FX + CP.FgShaft * MV.MathOperation.Sind(6) + CP.FgGearbox * MV.MathOperation.Sind(6);
                     bool FaIsPossitive = sumFa >= 0;
+                    double notInfluencedFaFMB = CalculateFMBPartOfAxialForce(sumFa); // neovlivněno druhým ložiskem
+                    await Task.WhenAll();
+                    double notInfluencedFaRMB = Math.Abs(sumFa - notInfluencedFaFMB);
+                    await Task.WhenAll();
+                    double generatedFaFromRMBFr = await CalculateGeneratedAxialForce(CP.RMB, loadState.RMBState.FR, notInfluencedFaRMB);
+                    double generatedFaFromFMBFr = await CalculateGeneratedAxialForce(CP.FMB, loadState.FMBState.FR, notInfluencedFaFMB);
                     sumFa = Math.Abs(sumFa);
-                    double externalFaFMB = p * sumFa;
-                    double externalFaRMB = sumFa - externalFaFMB;
-                    double notInfluencedFaFMB; // neovlivněno druhým ložiskem
-                    double notInfluencedFaRMB;
-                    if (FaIsPossitive)
-                    {
-                        notInfluencedFaFMB = CP.AxialPreload + externalFaFMB;
-                        notInfluencedFaRMB = CP.AxialPreload - externalFaRMB;
-                    }
-                    else if (!FaIsPossitive)
-                    {
-                        notInfluencedFaFMB = CP.AxialPreload - externalFaFMB;
-                        notInfluencedFaRMB = CP.AxialPreload + externalFaRMB;
-                    }
-                    else
-                    {
-                        throw new Exception();
-                    }
-                    double generatedFaFromRMBFr = CalculateGeneratedAxialForce(CP.RMB, loadState.RMBState.FR, notInfluencedFaRMB);
-                    double generatedFaFromFMBFr = CalculateGeneratedAxialForce(CP.FMB, loadState.FMBState.FR, notInfluencedFaFMB);
+                    //sumFa = Math.Abs(sumFa) + generatedFaFromRMBFr + generatedFaFromFMBFr;
+                    //loadState.RMBState.FA = CalculateFMBPartOfAxialForce(sumFa);
+                    //loadState.FMBState.FA = sumFa - loadState.RMBState.FA;
                     if (FaIsPossitive)
                     {
                         if (generatedFaFromRMBFr >= generatedFaFromFMBFr && sumFa >= 0)
@@ -224,7 +231,8 @@ namespace WindDataProcessing
                         }
                         else if (generatedFaFromRMBFr < generatedFaFromFMBFr && sumFa < generatedFaFromFMBFr - generatedFaFromRMBFr)
                         {
-                            loadState.RMBState.FA = generatedFaFromFMBFr - notInfluencedFaRMB;
+                            loadState.RMBState.FA = generatedFaFromFMBFr /*-*/+ notInfluencedFaRMB; // Zde není minus jako v SKF katalogu, protože notInfluenced zohledňuje předpětí,
+                                                                                                    // které se musí přičíst.
                             loadState.FMBState.FA = generatedFaFromFMBFr + notInfluencedFaFMB;
                         }
                         else
@@ -247,7 +255,7 @@ namespace WindDataProcessing
                         else if (generatedFaFromRMBFr > generatedFaFromFMBFr && sumFa < generatedFaFromFMBFr - generatedFaFromRMBFr)
                         {
                             loadState.RMBState.FA = generatedFaFromRMBFr + notInfluencedFaRMB;
-                            loadState.FMBState.FA = generatedFaFromRMBFr - notInfluencedFaFMB;
+                            loadState.FMBState.FA = generatedFaFromRMBFr +/*-*/ notInfluencedFaFMB;
                         }
                         else
                         {
@@ -264,14 +272,208 @@ namespace WindDataProcessing
             await Task.WhenAll();
         }
 
-        private double CalculateAxialForceRatio(LoadState loadState)
+        private double CalculateFMBPartOfAxialForce(double sumFa)
         {
-            return 1.0;
+            const double a = 15655987;
+            const double b = 6850690;
+            const double c = 514584;
+            const double d = 3376964;
+            const double e = -3130495;
+            const double f = 494685;
+            const double a_d = a - d;
+            const double b_e = b - e;
+            double c_f_FA = c - f - sumFa;
+            double determinant = Math.Sqrt(Math.Pow(b_e, 2.0) - 4 * a_d * c_f_FA);
+            double x = (-b_e + determinant) / (2 * a_d);
+            double result = a * Math.Pow(x, 2.0) + b * x + c;
+            if (result < 0)
+            {
+                throw new Exception("Axiální síla na FMB je menší než 0");
+            }
+            return result;
         }
 
-        private double CalculateGeneratedAxialForce(BearingParametersColection bearing, double FR, double FA)
+        private Task<double> CalculateGeneratedAxialForce(BearingParametersColection bearing, double FR, double notInfluencedFA)
         {
-            return 0.5 * FR / bearing.Y1;
+            //double silovyPomer = MV.Algorithm.MetodaPuleniIntervalu(CalculateAxialForceResiduum, new List<object> { bearing.ContactAngle, bearing.Z, FR, notInfluencedFA }, 0.0, 1.0, 0.0001, 100000);
+            const double silovyPomerProEps0_5 = 0.7939;
+            double FAproEps0_5 = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / silovyPomerProEps0_5;
+            double silovyPomer = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / Math.Max(FAproEps0_5, notInfluencedFA); /*+ notInfluencedFA*/
+            double krok = -0.001;
+            double deltaQmax0 = CalculateDeltaQmaxDleSilovehoPomeru(bearing.Z, bearing.ContactAngle, FR, silovyPomer);
+            silovyPomer += krok;
+            double deltaQmax1 = CalculateDeltaQmaxDleSilovehoPomeru(bearing.Z, bearing.ContactAngle, FR, silovyPomer);
+            if (deltaQmax1 > deltaQmax0)
+            {
+                krok = +0.001;
+                silovyPomer += 2 * krok;
+            }
+            double FA0 = 0;
+            double FA = FA0;
+            Dictionary<double, double> deltaQmaxResults = new Dictionary<double, double>();
+            for (int i = 0; silovyPomer > 0 && silovyPomer < 1; i++)
+            {
+                double FA1 = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / silovyPomer;
+                double deltaQmaxNext = CalculateDeltaQmax(bearing.Z, bearing.ContactAngle, FR, FA1);
+                deltaQmaxResults.Add(silovyPomer, deltaQmaxNext);
+                if (deltaQmaxNext > deltaQmax0)
+                {
+                    FA = FA0;
+                    break;
+                }
+                else
+                {
+                    FA0 = FA1;
+                    deltaQmax0 = deltaQmaxNext;
+                    silovyPomer += krok;
+                }
+            }
+            if (silovyPomer <= 0 || silovyPomer >= 1)
+            {
+                throw new Exception();
+            }
+            else
+            {
+                return Task.FromResult(FA - notInfluencedFA);
+            }
+            //double FA = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / silovyPomer;
+            //return Task.FromResult(FA - notInfluencedFA);
+        }
+
+        private double CalculateDeltaQmax(double Z, double contactAngle, double FR, double FA)
+        {
+            double silovyPomer = (FR * MV.MathOperation.Tand(contactAngle)) / FA;
+            double Jr = CalculateJrIntegral(silovyPomer, Z);
+            double Ja = CalculateJaIntegral(silovyPomer, Z);
+            double Qmax_FR = FR / (Z * Jr * MV.MathOperation.Cosd(contactAngle));
+            double Qmax_FA = FA / (Z * Ja * MV.MathOperation.Sind(contactAngle));
+            double deltaQmax = Math.Abs(Qmax_FR - Qmax_FA);
+            return deltaQmax;
+        }
+
+        private double CalculateDeltaQmaxDleSilovehoPomeru(double Z, double contactAngle, double FR, double silovyPomer)
+        {
+            double FA = (FR * MV.MathOperation.Tand(contactAngle)) / silovyPomer;
+            return CalculateDeltaQmax(Z, contactAngle, FR, FA);
+        }
+
+        private double CalculateAxialForceResiduum(double silovyPomer, List<object> parameters)
+        {
+            double contactAngle = (double)parameters[0];
+            double Z = (double)parameters[1];
+            double FR = (double)parameters[2];
+            double notInfluencedFA = (double)parameters[3];
+            double FA = (FR * MV.MathOperation.Tand(contactAngle)) / silovyPomer;
+            double Jr = CalculateJrIntegral(silovyPomer, Z);
+            double Ja = CalculateJaIntegral(silovyPomer, Z);
+            double eps = CalculateEpsilon(silovyPomer);
+            double Qmax_extRA = FR / (Z * Jr * MV.MathOperation.Cosd(contactAngle));
+            double Qmax_extFA = (FA) / (Z * Ja * MV.MathOperation.Sind(contactAngle));
+            return Qmax_extRA - Qmax_extFA;
+            //double Qmax = Qmax_extRA + Qmax_extFA;
+            //List<double> Qpsi = new List<double>();
+            //double psi_krok = 360 / Z;
+            //for (int z = 0; z < Z; z++)
+            //{
+            //    double psi = z * psi_krok;
+            //    double Qpsi_i = Qmax * Math.Pow(1 - 1 / (2 * eps) * (1 - MV.MathOperation.Cosd(psi)), CP.n);
+            //    if (double.IsNaN(Qpsi_i))
+            //    {
+            //        Qpsi_i = 0;
+            //    }
+            //    Qpsi.Add(Qpsi_i);
+            //}
+            //double RA = 0;
+            //for (int z = 0; z < Z; z++)
+            //{
+            //    RA += Qpsi[z] * MV.MathOperation.Sind(contactAngle);
+            //}
+            //return RA - FA;
+        }
+
+        private double CalculateEpsilon(double silovyPomer)
+        {
+            const double a01 = 1.834977077;
+            const double a02 = 5.726495998;
+            const double a03 = 9.142795181;
+            const double a04 = 0.821406651;
+            const double a05 = 12.90083314;
+            const double a06 = 40.35269018;
+            double absolutniClen = Math.Abs(silovyPomer - 1);
+            double prvniClen = a01 * Math.Pow(absolutniClen, a04);
+            double druhyClen = a02 * Math.Pow(absolutniClen, a05);
+            double tretiClen = a03 * Math.Pow(absolutniClen, a06);
+            return prvniClen + druhyClen + tretiClen;
+        }
+
+        private double CalculateJrIntegral(double silovyPomer, double Z)
+        {
+            if (silovyPomer < 0.9215)
+            {
+                const double a01 = -0.84823;
+                const double a02 = -0.29649;
+                const double a03 = -0.6217;
+                const double a04 = 0.266937;
+                const double a05 = -0.61334;
+                return a01 * Math.Pow(silovyPomer + a03, 2.0) + a04 + a02 * Math.Pow(silovyPomer + a05, 3.0);
+            }
+            else
+            {
+                return MV.Algorithm.LinearniInterpolace(0.9215, 0.1737, 1.0, 1 / Z, silovyPomer);
+            }
+        }
+
+        private double CalculateJaIntegral(double silovyPomer, double Z)
+        {
+            if (silovyPomer < 0.9215)
+            {
+                const double a01 = -0.334732428;
+                const double a02 = -1.44886561;
+                const double a03 = 0.221814449;
+                const double a04 = 0.663496962;
+                const double a05 = -0.622728653;
+                return a01 * Math.Pow(silovyPomer + a03, 2.0) + a04 + a02 * Math.Pow(silovyPomer + a05, 3.0);
+            }
+            else
+            {
+                return MV.Algorithm.LinearniInterpolace(0.9215, 0.1737, 1.0, 1 / Z, silovyPomer);
+            }
+        }
+
+        private async Task CalculateEquivalentForces(List<LoadCase> loadCases)
+        {
+            foreach (LoadCase loadCase in loadCases)
+            {
+                List<double> tini = new List<double>();
+                List<double> FR_RMB_tini = new List<double>();
+                List<double> FA_RMB_tini = new List<double>();
+                List<double> FR_FMB_tini = new List<double>();
+                List<double> FA_FMB_tini = new List<double>();
+                foreach (LoadState loadState in loadCase.LoadStates)
+                {
+                    double tini_i = loadState.Speed * 0.04;
+                    tini.Add(tini_i);
+                    FR_FMB_tini.Add(Math.Pow(loadState.FMBState.FR, CP.n) * tini_i);
+                    FR_RMB_tini.Add(Math.Pow(loadState.RMBState.FR, CP.n) * tini_i);
+                    FA_FMB_tini.Add(Math.Pow(loadState.FMBState.FA, CP.n) * tini_i);
+                    FA_RMB_tini.Add(Math.Pow(loadState.RMBState.FA, CP.n) * tini_i);
+                }
+                double sum_tini = tini.Sum();
+                double sum_FR_FMB = FR_FMB_tini.Sum();
+                double sum_FR_RMB = FR_RMB_tini.Sum();
+                double sum_FA_FMB = FA_FMB_tini.Sum();
+                double sum_FA_RMB = FA_RMB_tini.Sum();
+                double ratio_FR_FMB = sum_FR_FMB / sum_tini;
+                double ratio_FR_RMB = sum_FR_RMB / sum_tini;
+                double ratio_FA_FMB = sum_FA_FMB / sum_tini;
+                double ratio_FA_RMB = sum_FA_RMB / sum_tini;
+                loadCase.FReqFMB = Math.Pow(ratio_FR_FMB, 1 / CP.n);
+                loadCase.FReqRMB = Math.Pow(ratio_FR_RMB, 1 / CP.n);
+                loadCase.FAeqFMB = Math.Pow(ratio_FA_FMB, 1 / CP.n);
+                loadCase.FAeqRMB = Math.Pow(ratio_FA_RMB, 1 / CP.n);
+            }
+
+            await Task.WhenAll();
         }
 
         private async Task CalculateLoadCaseAverageSpeeds(List<LoadCase> loadCases)

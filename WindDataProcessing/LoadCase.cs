@@ -13,5 +13,11 @@ namespace WindDataProcessing
         internal string Name { get; set; }
         internal double TimeShare { get; set; }
         internal List<LoadState> LoadStates { get; set; }
+        internal double FReqFMB { get; set; }
+        internal double FAeqFMB { get; set; }
+        internal double PeqFMB { get; set; }
+        internal double FReqRMB { get; set; }
+        internal double FAeqRMB { get; set; }
+        internal double PeqRMB { get; set; }
     }
 }

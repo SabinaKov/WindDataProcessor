@@ -38,13 +38,16 @@ namespace GAMESA_01
                     FgShaft = 243778.5,
                     FgGearbox = 451260,
                     AxialPreload = 0, //,500000
+                    n = 10.0 / 3.0,
                     FMB = new BearingParametersColection()
                     {
-                        ContactAngle = 19
+                        ContactAngle = 19,
+                        Z = 52
                     },
                     RMB = new BearingParametersColection()
                     {
-                        ContactAngle = 11
+                        ContactAngle = 11,
+                        Z = 62
                     }
                 };
 

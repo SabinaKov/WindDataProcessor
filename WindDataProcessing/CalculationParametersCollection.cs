@@ -23,6 +23,7 @@ namespace WindDataProcessing
 
         public BearingParametersColection FMB { get; set; }
         public BearingParametersColection RMB { get; set; }
+        public double n { get; set; }
     }
 
     public class BearingParametersColection
@@ -40,5 +41,6 @@ namespace WindDataProcessing
         }
 
         public double Y1 { get; set; }
+        public double Z { get; set; }
     }
 }

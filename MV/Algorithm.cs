@@ -17,7 +17,7 @@ namespace MV
         /// <param name="tolerance"></param>
         /// <param name="maxIterations"></param>
         /// <returns>Result</returns>
-        public static double MetodaPuleniIntervalu(Func<int> zkontrolujPrerusujiciZadost, Func<double, double> function, double lowerEndPoint, double higherEndpoint, double tolerance, int maxIterations)
+        public static double MetodaPuleniIntervalu(Func<double, double> function, List<object> list, double lowerEndPoint, double higherEndpoint, double tolerance, int maxIterations)
         {
             if (lowerEndPoint >= higherEndpoint)
             {
@@ -34,7 +34,6 @@ namespace MV
             double b = higherEndpoint;
             while (n <= maxIterations)
             {
-                zkontrolujPrerusujiciZadost();
                 double c = (a + b) / 2.0;
                 double f_c = function(c);
                 if (f_c == 0 || (b - a) / 2 < tolerance)
@@ -65,7 +64,7 @@ namespace MV
         /// <param name="tolerance"></param>
         /// <param name="maxIterations"></param>
         /// <returns>Result</returns>
-        public static double MetodaPuleniIntervalu(Func<int> zkontrolujPrerusujiciZadost, Func<double, List<object>, double> function, List<object> parameters, double lowerEndPoint, double higherEndpoint, double tolerance, int maxIterations)
+        public static double MetodaPuleniIntervalu(Func<double, List<object>, double> function, List<object> parameters, double lowerEndPoint, double higherEndpoint, double tolerance, int maxIterations)
         {
             if (lowerEndPoint >= higherEndpoint)
             {
@@ -82,7 +81,6 @@ namespace MV
             double b = higherEndpoint;
             while (n <= maxIterations)
             {
-                zkontrolujPrerusujiciZadost();
                 double c = (a + b) / 2.0;
                 double f_c = function(c, parameters);
                 if (f_c == 0 || (b - a) / 2 < tolerance)
@@ -100,6 +98,11 @@ namespace MV
                 }
             }
             throw new Exception("Max number of iterations of Bisection Method was achieved.");
+        }
+
+        public static double LinearniInterpolace(double x0, double y0, double x1, double y1, double x)
+        {
+            return y0 + (x - x0) * (y1 - y0) / (x1 - x0);
         }
     }
 }

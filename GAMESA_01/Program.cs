@@ -12,15 +12,15 @@ namespace GAMESA_01
             {
                 Console.WriteLine("Path to the CSV file with Load Case Time Shares: ");
                 // @"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1.csv"
-                string loadCasesTimeShareFilePath = @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD.csv";//Console.ReadLine();
+                string loadCasesTimeShareFilePath = @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD.csv"; //@"\\Brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrane_LC.csv";//@"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD.csv";//Console.ReadLine();
                 Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
                 Console.WriteLine("Path to the Project Directory: ");
                 //@"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1"
-                string projectDirectoryPath = @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD";//Console.ReadLine();
+                string projectDirectoryPath = @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD";//@"\\Brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrané_LC"; //@"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD";//Console.ReadLine();
                 Console.WriteLine($"You set: {projectDirectoryPath}");
                 Console.WriteLine("Path to the Directory where results will be saved: ");
                 //@"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData"
-                string resultsDirectoryPath = @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData";//Console.ReadLine();
+                string resultsDirectoryPath = @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData";//@"\\Brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák";//@"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData";//Console.ReadLine();
                 Console.WriteLine($"You set: {resultsDirectoryPath}");
                 DataProcessor dataProcessor = new DataProcessor(loadCasesTimeShareFilePath, projectDirectoryPath, resultsDirectoryPath);
                 dataProcessor.SourceDataType = Enums.SourceDataType.CSV;

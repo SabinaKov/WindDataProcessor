@@ -19,5 +19,8 @@ namespace WindDataProcessing
         internal double FReqRMB { get; set; }
         internal double FAeqRMB { get; set; }
         internal double PeqRMB { get; set; }
+        internal int NoFirstCondition { get; set; } = 0;
+        internal int NoSecondCondition { get; set; } = 0;
+        internal int NoThirdCondition { get; set; } = 0;
     }
 }

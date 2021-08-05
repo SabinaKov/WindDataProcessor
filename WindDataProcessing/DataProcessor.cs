@@ -33,14 +33,17 @@ namespace WindDataProcessing
             Console.WriteLine("Process started!");
             List<LoadCase> loadCasesWithoutLoadStates = LoadLoadCaseData();
             List<LoadCase> loadCases = await PopulateLoadCasesWithLoadStatesAsync(loadCasesWithoutLoadStates);
-            await CalculateLoadCaseAverageSpeeds(loadCases);
+            Console.WriteLine("Load states loaded. Radial reaction calculation started.");
             await CalculateRadialReactions(loadCases);
+            Console.WriteLine("Radial reactions calculated. Axial reaction calculation started.");
             await CalculateAxialReactions(loadCases);
             TestFaReactions(loadCases);
             await CalculateEquivalentForces(loadCases);
             List<List<string>> exportData = PrepareDataToExport(loadCases);
             MV.FileProcessor.ExportCSV(exportData, ResultsDirectoryPath, @"results");
             Console.WriteLine("Hotovo.");
+            Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
+            Console.Beep();
         }
 
         private void TestFaReactions(List<LoadCase> loadCases)
@@ -67,6 +70,9 @@ namespace WindDataProcessing
             List<string> NoFirstConditionRow = new List<string>();
             List<string> NoSecondConditionRow = new List<string>();
             List<string> NoThirdConditionRow = new List<string>();
+            List<string> NoFourthConditionRow = new List<string>();
+            List<string> NoFifthConditionRow = new List<string>();
+            List<string> NoSixthConditionRow = new List<string>();
             foreach (LoadCase loadCase in loadCases)
             {
                 nameRow.Add(loadCase.Name);
@@ -77,6 +83,9 @@ namespace WindDataProcessing
                 NoFirstConditionRow.Add(loadCase.NoFirstCondition.ToString());
                 NoSecondConditionRow.Add(loadCase.NoSecondCondition.ToString());
                 NoThirdConditionRow.Add(loadCase.NoThirdCondition.ToString());
+                NoFourthConditionRow.Add(loadCase.NoFourthCondition.ToString());
+                NoFifthConditionRow.Add(loadCase.NoFifthCondition.ToString());
+                NoSixthConditionRow.Add(loadCase.NoSixthCondition.ToString());
             }
             List<List<string>> data = new List<List<string>>
             {
@@ -87,7 +96,10 @@ namespace WindDataProcessing
                 FAeqRMBRow,
                 NoFirstConditionRow,
                 NoSecondConditionRow,
-                NoThirdConditionRow
+                NoThirdConditionRow,
+                NoFourthConditionRow,
+                NoFifthConditionRow,
+                NoSixthConditionRow
             };
             return data;
         }
@@ -129,6 +141,9 @@ namespace WindDataProcessing
         private async Task<List<LoadCase>> PopulateLoadCasesWithLoadStatesAsync(List<LoadCase> loadCasesWithoutLoadStates)
         {
             List<LoadCase> loadCases = new List<LoadCase>();
+            int loadCasesNumerator = 0;
+            int nLoadCases = loadCasesWithoutLoadStates.Count;
+            Console.WriteLine();
             switch (SourceDataType)
             {
                 case Enums.SourceDataType.CSV:
@@ -154,6 +169,7 @@ namespace WindDataProcessing
                             }
                             loadCase.LoadStates = loadStates;
                             loadCases.Add(loadCase);
+                            Console.Write($"\rLoading LTS to RAM: Load case {loadCasesNumerator++} of {nLoadCases} loaded.    ");
                         }
                         await Task.WhenAll();
                         break;
@@ -236,8 +252,11 @@ namespace WindDataProcessing
 
         private async Task CalculateAxialReactions(List<LoadCase> loadCases)
         {
+            int loadCaseNumerator = 0;
+            Console.WriteLine();
             foreach (LoadCase loadCase in loadCases)
             {
+                int loadStateNumerator = 0;
                 foreach (LoadState loadState in loadCase.LoadStates)
                 {
                     double sumFa = loadState.FX + CP.FgShaft * MV.MathOperation.Sind(6) + CP.FgGearbox * MV.MathOperation.Sind(6);
@@ -246,9 +265,20 @@ namespace WindDataProcessing
                     await Task.WhenAll();
                     double notInfluencedFaRMB = Math.Abs(sumFa - notInfluencedFaFMB);
                     await Task.WhenAll();
-                    double generatedFaFromRMBFr = await CalculateGeneratedAxialForce(CP.RMB, loadState.RMBState.FR, notInfluencedFaRMB);
-                    double generatedFaFromFMBFr = await CalculateGeneratedAxialForce(CP.FMB, loadState.FMBState.FR, notInfluencedFaFMB);
-                    sumFa = Math.Abs(sumFa);
+                    double generatedFaFromRMBFr;
+                    double generatedFaFromFMBFr;
+                    try
+                    {
+                        generatedFaFromRMBFr = await CalculateGeneratedAxialForce(CP.RMB, loadState.RMBState.FR, notInfluencedFaRMB);
+                        generatedFaFromFMBFr = await CalculateGeneratedAxialForce(CP.FMB, loadState.FMBState.FR, notInfluencedFaFMB);
+                    }
+                    catch (ForceRatioOutOfRangeException)
+                    {
+                        Console.WriteLine($"Problém v Load case {loadCaseNumerator}: {loadCase.Name}, Load state: {loadStateNumerator}.");
+                        throw;
+                    }
+
+                    double KA = Math.Abs(sumFa);
                     //sumFa = Math.Abs(sumFa) + generatedFaFromRMBFr + generatedFaFromFMBFr;
                     //loadState.RMBState.FA = CalculateFMBPartOfAxialForce(sumFa);
                     //loadState.FMBState.FA = sumFa - loadState.RMBState.FA;
@@ -257,26 +287,25 @@ namespace WindDataProcessing
                     double sumFa2;
                     if (FaIsPossitive)
                     {
-                        if (generatedFaFromRMBFr >= generatedFaFromFMBFr && sumFa >= 0)
+                        if (generatedFaFromRMBFr >= generatedFaFromFMBFr && KA >= 0)
                         {
-                            sumFa2 = sumFa + generatedFaFromRMBFr;
+                            sumFa2 = KA + generatedFaFromRMBFr;
                             FaFMB = CalculateFMBPartOfAxialForce(sumFa2);
-                            FaRMB = FaFMB - sumFa;
+                            FaRMB = FaFMB - KA;
                             loadCase.NoFirstCondition++;
                         }
-                        else if (generatedFaFromRMBFr < generatedFaFromFMBFr && sumFa >= generatedFaFromFMBFr - generatedFaFromRMBFr)
+                        else if (generatedFaFromRMBFr < generatedFaFromFMBFr && KA >= generatedFaFromFMBFr - generatedFaFromRMBFr)
                         {
-                            sumFa2 = sumFa + generatedFaFromFMBFr;
-                            FaFMB = CalculateFMBPartOfAxialForce(sumFa2) - generatedFaFromRMBFr; // Nemám odůvodnění odečtu generatedFaFromRMBFr, ale vychází to.
-                            FaRMB = FaFMB - sumFa;
+                            sumFa2 = KA + generatedFaFromFMBFr;
+                            FaFMB = CalculateFMBPartOfAxialForce(sumFa2)/* - generatedFaFromRMBFr*/; // Nemám odůvodnění odečtu generatedFaFromRMBFr, ale vychází to.
+                            FaRMB = FaFMB - KA;
                             loadCase.NoSecondCondition++;
                         }
-                        else if (generatedFaFromRMBFr < generatedFaFromFMBFr && sumFa < generatedFaFromFMBFr - generatedFaFromRMBFr)
+                        else if (generatedFaFromRMBFr < generatedFaFromFMBFr && KA < generatedFaFromFMBFr - generatedFaFromRMBFr)
                         {
-                            //double FA_FMBfinal = ThirdConditionCycle(loadState.RMBState.FR, notInfluencedFaFMB, sumFa);
-                            sumFa2 = sumFa - generatedFaFromFMBFr;
-                            FaRMB = CalculateRMBPartOfAxialForce(sumFa2) + generatedFaFromFMBFr; // Nemám odůvodnění přičtení generatedFaFromFMBFr, ale vychází to.
-                            FaFMB = FaRMB + sumFa;
+                            sumFa2 = KA - generatedFaFromFMBFr; // (KA - generatedFaFromRMBFr) - zkusit
+                            FaRMB = CalculateRMBPartOfAxialForce(sumFa2)/* + generatedFaFromRMBFr*/; // Nemám odůvodnění přičtení generatedFaFromFMBFr, ale vychází to.
+                            FaFMB = FaRMB + KA;
                             loadCase.NoThirdCondition++;
                         }
                         else
@@ -286,23 +315,26 @@ namespace WindDataProcessing
                     }
                     else if (!FaIsPossitive)
                     {
-                        if (generatedFaFromRMBFr <= generatedFaFromFMBFr && sumFa >= 0)
+                        if (generatedFaFromRMBFr <= generatedFaFromFMBFr && KA >= 0) // 4
                         {
-                            sumFa2 = sumFa - generatedFaFromFMBFr;
-                            FaRMB = CalculateRMBPartOfAxialForce(sumFa2);
-                            FaFMB = FaRMB + sumFa;
+                            sumFa2 = KA + generatedFaFromFMBFr;
+                            FaRMB = CalculateRMBPartOfAxialForce(-sumFa2);
+                            FaFMB = FaRMB - KA;
+                            loadCase.NoFourthCondition++;
                         }
-                        else if (generatedFaFromRMBFr > generatedFaFromFMBFr && sumFa >= generatedFaFromFMBFr - generatedFaFromRMBFr)
+                        else if (generatedFaFromRMBFr > generatedFaFromFMBFr && KA >= generatedFaFromRMBFr - generatedFaFromFMBFr) // 5
                         {
-                            sumFa2 = sumFa - generatedFaFromFMBFr;
-                            FaRMB = CalculateRMBPartOfAxialForce(sumFa2);
-                            FaFMB = FaRMB + sumFa;
+                            sumFa2 = KA + generatedFaFromRMBFr;
+                            FaRMB = CalculateRMBPartOfAxialForce(-sumFa2);
+                            FaFMB = FaRMB - KA;
+                            loadCase.NoFifthCondition++;
                         }
-                        else if (generatedFaFromRMBFr > generatedFaFromFMBFr && sumFa < generatedFaFromFMBFr - generatedFaFromRMBFr)
+                        else if (generatedFaFromRMBFr > generatedFaFromFMBFr && KA < generatedFaFromRMBFr - generatedFaFromFMBFr) // 6
                         {
-                            sumFa2 = sumFa + generatedFaFromFMBFr;
+                            sumFa2 = generatedFaFromRMBFr - KA;
                             FaFMB = CalculateFMBPartOfAxialForce(sumFa2);
-                            FaRMB = FaFMB - sumFa;
+                            FaRMB = FaFMB - KA;
+                            loadCase.NoSixthCondition++;
                         }
                         else
                         {
@@ -313,28 +345,14 @@ namespace WindDataProcessing
                     {
                         throw new Exception();
                     }
-                    //loadState.RMBState.FA = FaRMB;
-                    //loadState.FMBState.FA = FaFMB;
+                    loadState.RMBState.FA = FaRMB;
+                    loadState.FMBState.FA = FaFMB;
+                    loadStateNumerator++;
                 }
+                Console.Write($"\rLoad case {loadCaseNumerator++} axial reaction calculation finished.     ");
             }
 
             await Task.WhenAll();
-        }
-
-        private double ThirdConditionCycle(double FR_FMB, double FA_FMBold, double sumFa)
-        {
-            double generatedFaFromFMBFr = CalculateGeneratedAxialForce(CP.FMB, FR_FMB, FA_FMBold).Result;
-            double sumFa2 = sumFa - generatedFaFromFMBFr;
-            double FaRMB = CalculateRMBPartOfAxialForce(sumFa2);
-            double FaFMBnew = FaRMB + sumFa;
-            if (FaFMBnew <= FA_FMBold + 1 || FaFMBnew >= FA_FMBold - 1)
-            {
-                return FA_FMBold;
-            }
-            else
-            {
-                return ThirdConditionCycle(FR_FMB, FaFMBnew, sumFa);
-            }
         }
 
         private double CalculateFMBPartOfAxialForce(double sumFa)
@@ -414,9 +432,9 @@ namespace WindDataProcessing
                     silovyPomer += krok;
                 }
             }
-            if (silovyPomer <= 0 || silovyPomer >= 1)
+            if (silovyPomer >= 1)
             {
-                throw new Exception();
+                throw new ForceRatioOutOfRangeException($"Silový poměr vyšel větší, než 1: {silovyPomer}");
             }
             else
             {

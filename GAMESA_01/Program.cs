@@ -12,25 +12,39 @@ namespace GAMESA_01
             {
                 Console.WriteLine("Path to the CSV file with Load Case Time Shares: ");
                 // @"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1.csv"
-                string loadCasesTimeShareFilePath = @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD.csv"; //@"\\Brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrane_LC.csv";//@"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD.csv";//Console.ReadLine();
+                //@"\\Brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrane_LC.csv";
+                //@"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD.csv";
+                //Console.ReadLine();
+                //@"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\Data_04_05_2021\OneDrive_2021-05-04\rates.csv";
+                //@"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\testRates.csv";
+                string loadCasesTimeShareFilePath = @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\testRates.csv";
                 Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
                 Console.WriteLine("Path to the Project Directory: ");
                 //@"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1"
-                string projectDirectoryPath = @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD";//@"\\Brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrané_LC"; //@"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD";//Console.ReadLine();
+                //@"\\Brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrané_LC";
+                //@"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD";
+                //Console.ReadLine();
+                //@"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\Data_04_05_2021\OneDrive_2021-05-04\SG5x.R2.1.PRJ-6076_MULTIPLE.INTERPOLATED_TIMESERIES";
+                //@"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\Test";
+                string projectDirectoryPath = @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\Test";
                 Console.WriteLine($"You set: {projectDirectoryPath}");
                 Console.WriteLine("Path to the Directory where results will be saved: ");
                 //@"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData"
-                string resultsDirectoryPath = @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData";//@"\\Brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák";//@"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData";//Console.ReadLine();
+                //@"\\Brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák";//@"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData";
+                //Console.ReadLine();
+                //@"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\Data_04_05_2021\OneDrive_2021-05-04";
+                //@"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076";
+                string resultsDirectoryPath = @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076";
                 Console.WriteLine($"You set: {resultsDirectoryPath}");
                 DataProcessor dataProcessor = new DataProcessor(loadCasesTimeShareFilePath, projectDirectoryPath, resultsDirectoryPath);
                 dataProcessor.SourceDataType = Enums.SourceDataType.CSV;
                 dataProcessor.SourceDataFirstLine = 19;
-                dataProcessor.SourceDataColumn.FX = 2;
-                dataProcessor.SourceDataColumn.FY = 3;
-                dataProcessor.SourceDataColumn.FZ = 5;
-                dataProcessor.SourceDataColumn.MY = 7;
-                dataProcessor.SourceDataColumn.MZ = 9;
-                dataProcessor.SourceDataColumn.Speed = 11;
+                dataProcessor.SourceDataColumn.FX = 2;//2
+                dataProcessor.SourceDataColumn.FY = 3;//3
+                dataProcessor.SourceDataColumn.FZ = 5;//5
+                dataProcessor.SourceDataColumn.MY = 7;//7
+                dataProcessor.SourceDataColumn.MZ = 9;//9
+                dataProcessor.SourceDataColumn.Speed = 11;//11
                 dataProcessor.NumberOfLevels = 144;
 
                 dataProcessor.CP = new CalculationParametersCollection()

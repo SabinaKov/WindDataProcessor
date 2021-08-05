@@ -22,5 +22,8 @@ namespace WindDataProcessing
         internal int NoFirstCondition { get; set; } = 0;
         internal int NoSecondCondition { get; set; } = 0;
         internal int NoThirdCondition { get; set; } = 0;
+        internal int NoFourthCondition { get; set; } = 0;
+        internal int NoFifthCondition { get; set; } = 0;
+        internal int NoSixthCondition { get; set; } = 0;
     }
 }

@@ -262,7 +262,16 @@ namespace WindDataProcessing
                     double sumFa = loadState.FX + CP.FgShaft * MV.MathOperation.Sind(6) + CP.FgGearbox * MV.MathOperation.Sind(6);
                     double notInfluencedFaFMB = CalculateFMBPartOfAxialForce(sumFa); // neovlivněno druhým ložiskem
                     double notInfluencedFaRMB = Math.Abs(sumFa - notInfluencedFaFMB);
-                    (double FA_FMB, double FA_RMB, int noCondition) = RecursivelyCalculateAxialReactions(loadState.FMBState.FR, loadState.RMBState.FR, notInfluencedFaFMB, notInfluencedFaRMB, sumFa);
+                    double FA_FMB, FA_RMB; int noCondition;
+                    try
+                    {
+                        (FA_FMB, FA_RMB, noCondition) = RecursivelyCalculateAxialReactions(loadState.FMBState.FR, loadState.RMBState.FR, notInfluencedFaFMB, notInfluencedFaRMB, sumFa);
+                    }
+                    catch (AxialReactionLessThanZeroException)
+                    {
+                        Console.WriteLine($"Problém v lc {loadCaseNumerator}: {loadCase.Name}");
+                        throw;
+                    }
 
                     loadState.FMBState.FA = FA_FMB;
                     loadState.RMBState.FA = FA_RMB;
@@ -354,7 +363,7 @@ namespace WindDataProcessing
             {
                 if (generatedFaFromRMBFr <= generatedFaFromFMBFr && KA >= 0) // 4
                 {
-                    FaRMB = FA_RMB_old + CalculateRMBPartOfAxialForce(/*-generatedFaFromRMBFr -*/ generatedFaFromFMBFr) - CP.AxialPreload;
+                    FaRMB = FA_RMB_old + CalculateRMBPartOfAxialForce(/*-generatedFaFromRMBFr -*/ -generatedFaFromFMBFr) - CP.AxialPreload;
                     FaFMB = FaRMB - KA;
                     noCondition = 4;
                 }
@@ -384,7 +393,7 @@ namespace WindDataProcessing
             //{
             if (FaFMB < 0 || FaRMB < 0)
             {
-                throw new Exception("Axiální reakce je menší, než 0.");
+                throw new AxialReactionLessThanZeroException("Axiální reakce je menší, než 0.");
             }
             return (FaFMB, FaRMB, noCondition);
             //}
@@ -709,6 +718,7 @@ namespace WindDataProcessing
 
         private async Task CalculateEquivalentForces(List<LoadCase> loadCases)
         {
+            int lcIterator = 0;
             foreach (LoadCase loadCase in loadCases)
             {
                 List<double> tini = new List<double>();
@@ -716,28 +726,37 @@ namespace WindDataProcessing
                 List<double> FA_RMB_tini = new List<double>();
                 List<double> FR_FMB_tini = new List<double>();
                 List<double> FA_FMB_tini = new List<double>();
-                foreach (LoadState loadState in loadCase.LoadStates)
+                try
                 {
-                    double tini_i = loadState.Speed * 0.04;
-                    tini.Add(tini_i);
-                    FR_FMB_tini.Add(Math.Pow(loadState.FMBState.FR, CP.n) * tini_i);
-                    FR_RMB_tini.Add(Math.Pow(loadState.RMBState.FR, CP.n) * tini_i);
-                    FA_FMB_tini.Add(Math.Pow(loadState.FMBState.FA, CP.n) * tini_i);
-                    FA_RMB_tini.Add(Math.Pow(loadState.RMBState.FA, CP.n) * tini_i);
+                    foreach (LoadState loadState in loadCase.LoadStates)
+                    {
+                        double tini_i = loadState.Speed * 0.04;
+                        tini.Add(tini_i);
+                        FR_FMB_tini.Add(Math.Pow(loadState.FMBState.FR, CP.n) * tini_i);
+                        FR_RMB_tini.Add(Math.Pow(loadState.RMBState.FR, CP.n) * tini_i);
+                        FA_FMB_tini.Add(Math.Pow(loadState.FMBState.FA, CP.n) * tini_i);
+                        FA_RMB_tini.Add(Math.Pow(loadState.RMBState.FA, CP.n) * tini_i);
+                    }
+                    double sum_tini = tini.Sum();
+                    double sum_FR_FMB = FR_FMB_tini.Sum();
+                    double sum_FR_RMB = FR_RMB_tini.Sum();
+                    double sum_FA_FMB = FA_FMB_tini.Sum();
+                    double sum_FA_RMB = FA_RMB_tini.Sum();
+                    double ratio_FR_FMB = sum_FR_FMB / sum_tini;
+                    double ratio_FR_RMB = sum_FR_RMB / sum_tini;
+                    double ratio_FA_FMB = sum_FA_FMB / sum_tini;
+                    double ratio_FA_RMB = sum_FA_RMB / sum_tini;
+                    loadCase.FReqFMB = Math.Pow(ratio_FR_FMB, 1 / CP.n);
+                    loadCase.FReqRMB = Math.Pow(ratio_FR_RMB, 1 / CP.n);
+                    loadCase.FAeqFMB = Math.Pow(ratio_FA_FMB, 1 / CP.n);
+                    loadCase.FAeqRMB = Math.Pow(ratio_FA_RMB, 1 / CP.n);
                 }
-                double sum_tini = tini.Sum();
-                double sum_FR_FMB = FR_FMB_tini.Sum();
-                double sum_FR_RMB = FR_RMB_tini.Sum();
-                double sum_FA_FMB = FA_FMB_tini.Sum();
-                double sum_FA_RMB = FA_RMB_tini.Sum();
-                double ratio_FR_FMB = sum_FR_FMB / sum_tini;
-                double ratio_FR_RMB = sum_FR_RMB / sum_tini;
-                double ratio_FA_FMB = sum_FA_FMB / sum_tini;
-                double ratio_FA_RMB = sum_FA_RMB / sum_tini;
-                loadCase.FReqFMB = Math.Pow(ratio_FR_FMB, 1 / CP.n);
-                loadCase.FReqRMB = Math.Pow(ratio_FR_RMB, 1 / CP.n);
-                loadCase.FAeqFMB = Math.Pow(ratio_FA_FMB, 1 / CP.n);
-                loadCase.FAeqRMB = Math.Pow(ratio_FA_RMB, 1 / CP.n);
+                catch (Exception)
+                {
+                    Console.WriteLine($"Problém v loadCase {lcIterator}: {loadCase.Name}");
+                    throw;
+                }
+                lcIterator++;
             }
 
             await Task.WhenAll();

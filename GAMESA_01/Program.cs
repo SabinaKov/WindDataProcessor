@@ -32,6 +32,12 @@ namespace GAMESA_01
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\PRJ-6076_rates.csv",
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\PRJ-6076_TIMESERIES",
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076"
+                        )},
+                    { 4, new Tuple<string, string, string>
+                        (
+                            @"\\brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrané LC redukované pro Miru\list.csv",
+                            @"\\brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrané LC redukované pro Miru\LTS",
+                            @"\\brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrané LC redukované pro Miru"
                         )}
                 };
 
@@ -40,7 +46,7 @@ namespace GAMESA_01
             try
             {
                 Console.WriteLine("Path to the CSV file with Load Case Time Shares: ");
-                const int choosedSettings = 1;
+                const int choosedSettings = 4;
                 string loadCasesTimeShareFilePath = pathSettings[choosedSettings].Item1;
                 Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
                 Console.WriteLine("Path to the Project Directory: ");
@@ -68,12 +74,12 @@ namespace GAMESA_01
                     FgGearbox = 451260,
                     AxialPreload = 500000,
                     n = 10.0 / 3.0,
-                    StiffnesCoefficient_a = 15655987,
-                    StiffnesCoefficient_b = 6850690,
-                    StiffnesCoefficient_c = 514584,
-                    StiffnesCoefficient_d = 3376964,
-                    StiffnesCoefficient_e = -3130495,
-                    StiffnesCoefficient_f = 494685,
+                    StiffnesCoefficient_a = 16809759.7,
+                    StiffnesCoefficient_b = 7650757.1,
+                    StiffnesCoefficient_c = 516149.5,
+                    StiffnesCoefficient_d = 7652307.4,
+                    StiffnesCoefficient_e = -4633025.6,
+                    StiffnesCoefficient_f = 495385.3,
                     FMB = new BearingParametersColection()
                     {
                         ContactAngle = 19,
@@ -82,9 +88,9 @@ namespace GAMESA_01
                     },
                     RMB = new BearingParametersColection()
                     {
-                        ContactAngle = 11,
+                        ContactAngle = 14,
                         Z = 62,
-                        Arm_a = 208.2
+                        Arm_a = 250.25
                     }
                 };
 

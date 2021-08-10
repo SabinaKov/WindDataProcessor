@@ -50,10 +50,17 @@ namespace WindDataProcessing
         public double ConvertSpeedMultiplyBy { get; set; } = 1.0;
         public CalculationParametersCollection CP { get; set; }
 
+        /// <summary>
+        /// Vypočítá reakce v ložiscích
+        /// </summary>
+        /// <returns></returns>
         public async Task BearingReactions()
         {
             Console.WriteLine("Process started!");
+            // V první řadě je třeba načíst data z disku do RAM.
+            // Nejdřív se připraví List of Load Case na základě seznamu Load Case:
             List<LoadCase> loadCasesWithoutLoadStates = LoadLoadCaseData();
+            // Následně se do Listu Load Case načtou jednotivé zátěžné stavy (Load State):
             List<LoadCase> loadCases = await PopulateLoadCasesWithLoadStatesAsync(loadCasesWithoutLoadStates);
             Console.WriteLine("Load states loaded. Radial reaction calculation started.");
             await CalculateRadialReactions(loadCases);
@@ -320,24 +327,21 @@ namespace WindDataProcessing
                     double FaFMB, FaRMB;
                     if (FaIsPossitive)
                     {
-                        if (generatedFaFromRMBFr >= generatedFaFromFMBFr && KA >= 0)
+                        if (generatedFaFromRMBFr >= generatedFaFromFMBFr && KA >= 0) // 1
                         {
-                            //sumFa2 = KA + (generatedFaFromFMBFr + generatedFaFromRMBFr);
-                            FaFMB = notInfluencedFaFMB + CalculateFMBPartOfAxialForce(generatedFaFromRMBFr /*+ generatedFaFromFMBFr*/) - CP.AxialPreload;//CalculateFMBPartOfAxialForce(sumFa2);
+                            FaFMB = notInfluencedFaFMB + CalculateFMBPartOfAxialForce(generatedFaFromRMBFr) - CP.AxialPreload;
                             FaRMB = FaFMB - KA;
                             loadCase.NoFirstCondition++;
                         }
-                        else if (generatedFaFromRMBFr < generatedFaFromFMBFr && KA >= generatedFaFromFMBFr - generatedFaFromRMBFr)
+                        else if (generatedFaFromRMBFr < generatedFaFromFMBFr && KA >= generatedFaFromFMBFr - generatedFaFromRMBFr) // 2
                         {
-                            //sumFa2 = KA + (generatedFaFromFMBFr - generatedFaFromRMBFr);
-                            FaFMB = notInfluencedFaFMB + CalculateFMBPartOfAxialForce(/*generatedFaFromRMBFr +*/ generatedFaFromFMBFr) - CP.AxialPreload; //CalculateFMBPartOfAxialForce(sumFa2)/* - generatedFaFromRMBFr*/; // Nemám odůvodnění odečtu generatedFaFromRMBFr, ale vychází to.
+                            FaFMB = notInfluencedFaFMB + CalculateFMBPartOfAxialForce(generatedFaFromFMBFr) - CP.AxialPreload;
                             FaRMB = FaFMB - KA;
                             loadCase.NoSecondCondition++;
                         }
-                        else if (generatedFaFromRMBFr < generatedFaFromFMBFr && KA < generatedFaFromFMBFr - generatedFaFromRMBFr)
+                        else if (generatedFaFromRMBFr < generatedFaFromFMBFr && KA < generatedFaFromFMBFr - generatedFaFromRMBFr) // 3
                         {
-                            //sumFa2 = KA - generatedFaFromFMBFr; // (KA - generatedFaFromRMBFr) - zkusit
-                            FaRMB = notInfluencedFaRMB + CalculateFMBPartOfAxialForce(/*generatedFaFromRMBFr +*/ generatedFaFromFMBFr) - CP.AxialPreload; //CalculateRMBPartOfAxialForce(sumFa2)/* + generatedFaFromRMBFr*/; // Nemám odůvodnění přičtení generatedFaFromFMBFr, ale vychází to.
+                            FaRMB = notInfluencedFaRMB + CalculateFMBPartOfAxialForce(generatedFaFromFMBFr) - CP.AxialPreload;
                             FaFMB = FaRMB - KA;
                             loadCase.NoThirdCondition++;
                         }
@@ -348,21 +352,21 @@ namespace WindDataProcessing
                     }
                     else if (!FaIsPossitive)
                     {
-                        if (generatedFaFromRMBFr <= generatedFaFromFMBFr && KA >= 0) // 4
+                        if (generatedFaFromRMBFr <= generatedFaFromFMBFr && KA >= 0)
                         {
-                            FaRMB = notInfluencedFaRMB + CalculateRMBPartOfAxialForce(/*-generatedFaFromRMBFr -*/ -generatedFaFromFMBFr) - CP.AxialPreload;
+                            FaRMB = notInfluencedFaRMB + CalculateRMBPartOfAxialForce(-generatedFaFromFMBFr) - CP.AxialPreload;
                             FaFMB = FaRMB - KA;
                             loadCase.NoFourthCondition++;
                         }
                         else if (generatedFaFromRMBFr > generatedFaFromFMBFr && KA >= generatedFaFromRMBFr - generatedFaFromFMBFr) // 5
                         {
-                            FaRMB = notInfluencedFaRMB + CalculateRMBPartOfAxialForce(-generatedFaFromRMBFr/* - generatedFaFromFMBFr*/) - CP.AxialPreload; //CalculateFMBPartOfAxialForce(sumFa2)/* - generatedFaFromRMBFr*/; // Nemám odůvodnění odečtu generatedFaFromRMBFr, ale vychází to.
+                            FaRMB = notInfluencedFaRMB + CalculateRMBPartOfAxialForce(-generatedFaFromRMBFr) - CP.AxialPreload;
                             FaFMB = FaRMB - KA;
                             loadCase.NoFifthCondition++;
                         }
                         else if (generatedFaFromRMBFr > generatedFaFromFMBFr && KA < generatedFaFromRMBFr - generatedFaFromFMBFr) // 6
                         {
-                            FaFMB = notInfluencedFaFMB + CalculateRMBPartOfAxialForce(-generatedFaFromRMBFr /*- generatedFaFromFMBFr*/) - CP.AxialPreload; //CalculateRMBPartOfAxialForce(sumFa2)/* + generatedFaFromRMBFr*/; // Nemám odůvodnění přičtení generatedFaFromFMBFr, ale vychází to.
+                            FaFMB = notInfluencedFaFMB + CalculateRMBPartOfAxialForce(-generatedFaFromRMBFr) - CP.AxialPreload;
                             FaRMB = FaFMB - KA;
                             loadCase.NoSixthCondition++;
                         }

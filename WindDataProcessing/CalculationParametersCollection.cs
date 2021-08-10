@@ -4,6 +4,9 @@ using System.Text;
 
 namespace WindDataProcessing
 {
+    /// <summary>
+    /// Soubor měnitelných vstupů
+    /// </summary>
     public class CalculationParametersCollection
     {
         /// <summary>
@@ -32,6 +35,9 @@ namespace WindDataProcessing
         public double StiffnesCoefficient_f { get; set; }
     }
 
+    /// <summary>
+    /// Soubor měnitelných vstupů vázaných na konkrétní ložisko
+    /// </summary>
     public class BearingParametersColection
     {
         private double contactAngle;
@@ -46,8 +52,16 @@ namespace WindDataProcessing
             }
         }
 
-        public double Y1 { get; set; }
+        internal double Y1 { get; set; }
+
+        /// <summary>
+        /// Počet valivých elementů
+        /// </summary>
         public double Z { get; set; }
+
+        /// <summary>
+        /// Rameno, na kterém působí radiální reakce ložiska. Závislé na úhlu styku.
+        /// </summary>
         public double Arm_a { get; set; }
     }
 }

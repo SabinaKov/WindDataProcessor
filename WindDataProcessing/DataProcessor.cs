@@ -18,13 +18,35 @@ namespace WindDataProcessing
             SourceDataColumn = new SourceDataColumnPosition();
         }
 
+        /// <summary>
+        /// Cesta k souboru se seznamem LoadCase a jejich četností (rates)
+        /// </summary>
         public string LoadCasesTimeShareFilePath { get; }
+
+        /// <summary>
+        /// Adresář s daty
+        /// </summary>
         public string ProjectDirectoryPath { get; }
+
+        /// <summary>
+        /// Adresář, kam se budou ukládat výsledky
+        /// </summary>
         public string ResultsDirectoryPath { get; }
+
         public Enums.SourceDataType SourceDataType { get; set; }
+
+        /// <summary>
+        /// První řádek LTS souboru, kde začínají číselná data. Řádky začínají číslem 1.
+        /// </summary>
         public int SourceDataFirstLine { get; set; }
+
         public SourceDataColumnPosition SourceDataColumn { get; set; }
+
+        /// <summary>
+        /// Pro potřeby převodu na LDD. Nastavte počet pásem, které se mají vytvořit.
+        /// </summary>
         public int NumberOfLevels { get; set; }
+
         public double ConvertSpeedMultiplyBy { get; set; } = 1.0;
         public CalculationParametersCollection CP { get; set; }
 

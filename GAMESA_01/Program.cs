@@ -7,12 +7,13 @@ namespace GAMESA_01
 {
     internal class Program
     {
-        private static async Task Main(string[] args)
-        {
-            try
-            {
-                Console.WriteLine("Path to the CSV file with Load Case Time Shares: ");
-                Dictionary<int, Tuple<string, string, string>> pathSettings = new Dictionary<int, Tuple<string, string, string>>
+        /// <summary>
+        /// Nastavení zátěžných stavů pro processing.
+        /// 1. string tuplu - cesta k souboru se seznamem LoadCase (1. sloupec) a jejich četnosti (2. sloupec) - CSV soubor oddělený středníky.
+        /// 2. string tuplu - adresář, ve kterém jsou uloženy data se zátěžnými stavy (LTS).
+        /// 3. string tuplu - adresář, kam se mají uložit výsledky.
+        /// </summary>
+        internal static Dictionary<int, Tuple<string, string, string>> pathSettings = new Dictionary<int, Tuple<string, string, string>>
                 {
                     { 1, new Tuple<string, string, string>
                         (
@@ -33,6 +34,12 @@ namespace GAMESA_01
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076"
                         )}
                 };
+
+        private static async Task Main(string[] args)
+        {
+            try
+            {
+                Console.WriteLine("Path to the CSV file with Load Case Time Shares: ");
                 const int choosedSettings = 1;
                 string loadCasesTimeShareFilePath = pathSettings[choosedSettings].Item1;
                 Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
@@ -42,9 +49,11 @@ namespace GAMESA_01
                 Console.WriteLine("Path to the Directory where results will be saved: ");
                 string resultsDirectoryPath = pathSettings[choosedSettings].Item3;
                 Console.WriteLine($"You set: {resultsDirectoryPath}");
-                DataProcessor dataProcessor = new DataProcessor(loadCasesTimeShareFilePath, projectDirectoryPath, resultsDirectoryPath);
-                dataProcessor.SourceDataType = Enums.SourceDataType.CSV;
-                dataProcessor.SourceDataFirstLine = 19;
+                DataProcessor dataProcessor = new DataProcessor(loadCasesTimeShareFilePath, projectDirectoryPath, resultsDirectoryPath)
+                {
+                    SourceDataType = Enums.SourceDataType.CSV,
+                    SourceDataFirstLine = 19,
+                };
                 dataProcessor.SourceDataColumn.FX = 2;//2
                 dataProcessor.SourceDataColumn.FY = 3;//3
                 dataProcessor.SourceDataColumn.FZ = 5;//5

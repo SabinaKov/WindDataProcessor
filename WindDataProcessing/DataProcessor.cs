@@ -342,7 +342,7 @@ namespace WindDataProcessing
                         else if (generatedFaFromRMBFr < generatedFaFromFMBFr && KA < generatedFaFromFMBFr - generatedFaFromRMBFr) // 3
                         {
                             FaRMB = notInfluencedFaRMB + CalculateFMBPartOfAxialForce(generatedFaFromFMBFr) - CP.AxialPreload;
-                            FaFMB = FaRMB - KA;
+                            FaFMB = FaRMB + KA;
                             loadCase.NoThirdCondition++;
                         }
                         else
@@ -367,7 +367,7 @@ namespace WindDataProcessing
                         else if (generatedFaFromRMBFr > generatedFaFromFMBFr && KA < generatedFaFromRMBFr - generatedFaFromFMBFr) // 6
                         {
                             FaFMB = notInfluencedFaFMB + CalculateRMBPartOfAxialForce(-generatedFaFromRMBFr) - CP.AxialPreload;
-                            FaRMB = FaFMB - KA;
+                            FaRMB = FaFMB + KA;
                             loadCase.NoSixthCondition++;
                         }
                         else

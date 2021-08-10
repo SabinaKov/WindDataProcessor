@@ -33,31 +33,13 @@ namespace GAMESA_01
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076"
                         )}
                 };
-                const int choosedSettings = 3;
-                // @"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1.csv"
-                //@"\\Brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrane_LC.csv";
-                //@"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD.csv";
-                //Console.ReadLine();
-                //@"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\Data_04_05_2021\OneDrive_2021-05-04\rates.csv";
-                //@"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\testRates.csv";
+                const int choosedSettings = 1;
                 string loadCasesTimeShareFilePath = pathSettings[choosedSettings].Item1;
                 Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
                 Console.WriteLine("Path to the Project Directory: ");
-                //@"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData\PRJ1"
-                //@"\\Brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrané_LC";
-                //@"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD";
-                //Console.ReadLine();
-                //@"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\Data_04_05_2021\OneDrive_2021-05-04\SG5x.R2.1.PRJ-6076_MULTIPLE.INTERPOLATED_TIMESERIES";
-                //@"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\Test";
                 string projectDirectoryPath = pathSettings[choosedSettings].Item2;
                 Console.WriteLine($"You set: {projectDirectoryPath}");
                 Console.WriteLine("Path to the Directory where results will be saved: ");
-                //@"C:\Users\Mirek\source\repos\ZpracovaniDat\WindDataProcessing\TestovaciData"
-                //@"\\Brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák";
-                //@"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData";
-                //Console.ReadLine();
-                //@"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\Data_04_05_2021\OneDrive_2021-05-04";
-                //@"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076";
                 string resultsDirectoryPath = pathSettings[choosedSettings].Item3;
                 Console.WriteLine($"You set: {resultsDirectoryPath}");
                 DataProcessor dataProcessor = new DataProcessor(loadCasesTimeShareFilePath, projectDirectoryPath, resultsDirectoryPath);
@@ -75,21 +57,30 @@ namespace GAMESA_01
                 {
                     FgShaft = 243778.5,
                     FgGearbox = 451260,
-                    AxialPreload = 500000, //,500000
+                    AxialPreload = 500000,
                     n = 10.0 / 3.0,
+                    StiffnesCoefficient_a = 15655987,
+                    StiffnesCoefficient_b = 6850690,
+                    StiffnesCoefficient_c = 514584,
+                    StiffnesCoefficient_d = 3376964,
+                    StiffnesCoefficient_e = -3130495,
+                    StiffnesCoefficient_f = 494685,
                     FMB = new BearingParametersColection()
                     {
                         ContactAngle = 19,
-                        Z = 52
+                        Z = 52,
+                        Arm_a = 361.6
                     },
                     RMB = new BearingParametersColection()
                     {
                         ContactAngle = 11,
-                        Z = 62
+                        Z = 62,
+                        Arm_a = 208.2
                     }
                 };
 
-                await dataProcessor.LDDlifesTester();
+                await dataProcessor.BearingReactions();
+                //await dataProcessor.LDDlifesTester(); //- Vývoj
                 //await dataProcessor.Process(); - vytvoří LDD
             }
             catch (Exception ex)

@@ -24,6 +24,12 @@ namespace WindDataProcessing
         public BearingParametersColection FMB { get; set; }
         public BearingParametersColection RMB { get; set; }
         public double n { get; set; }
+        public double StiffnesCoefficient_a { get; set; }
+        public double StiffnesCoefficient_b { get; set; }
+        public double StiffnesCoefficient_c { get; set; }
+        public double StiffnesCoefficient_d { get; set; }
+        public double StiffnesCoefficient_e { get; set; }
+        public double StiffnesCoefficient_f { get; set; }
     }
 
     public class BearingParametersColection
@@ -42,5 +48,6 @@ namespace WindDataProcessing
 
         public double Y1 { get; set; }
         public double Z { get; set; }
+        public double Arm_a { get; set; }
     }
 }

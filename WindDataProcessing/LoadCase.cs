@@ -8,6 +8,7 @@ namespace WindDataProcessing
 {
     internal class LoadCase
     {
+        public int Position { get; internal set; }
         public int NumberOfLoadStates { get; internal set; }
         public double AverageSpeed { get; internal set; }
         internal string Name { get; set; }

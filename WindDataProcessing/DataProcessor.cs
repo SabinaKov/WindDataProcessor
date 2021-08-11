@@ -97,7 +97,7 @@ namespace WindDataProcessing
             Console.WriteLine("Load states loaded. Radial reaction calculation started.");
             await CalculateRadialReactions(loadCases);
             Console.WriteLine("Radial reactions calculated. Axial reaction calculation started.");
-            await CalculateAxialReactions2(loadCases);
+            await CalculateAxialReactions(loadCases);
             TestFaReactions(loadCases);
             await CalculateEquivalentForces(loadCases);
             List<List<string>> exportData = PrepareDataToExport(loadCases);
@@ -260,6 +260,12 @@ namespace WindDataProcessing
             return loadCases;
         }
 
+        /// <summary>
+        /// Výpočet radiálních reakcí je odvozen z rovnic rovnováhy.
+        /// Z hlediska radiálních reakcí se jedná o staticky určitou úlohu.
+        /// </summary>
+        /// <param name="loadCases"></param>
+        /// <returns></returns>
         private async Task CalculateRadialReactions(List<LoadCase> loadCases)
         {
             const double B_ = 1825 / 1000.0;
@@ -301,13 +307,24 @@ namespace WindDataProcessing
             await Task.WhenAll();
         }
 
+        /// <summary>
+        /// Výpočet axiálních reakcí zohledňuje, že ložiska jsou k sobě předepjata známou hodnotou silového předpětí.
+        /// Zároveň počítá a zohledňuje axiální sílu, která se generuje působením radiální síly.
+        /// Výpočet je verifikován dle mnoha jiných výpočtů pomocí komerčního software Mesys.
+        /// </summary>
+        /// <param name="loadCases"></param>
+        /// <returns></returns>
         private async Task CalculateAxialReactions(List<LoadCase> loadCases)
         {
             foreach (LoadCase loadCase in loadCases)
             {
                 foreach (LoadState loadState in loadCase.LoadStates)
                 {
+                    // V první řadě se vypočíta suma vnějšíxh axiálních sil, které půosbí na hřídeli:
                     double sumFa = loadState.FX + CP.FgShaft * MV.MathOperation.Sind(6) + CP.FgGearbox * MV.MathOperation.Sind(6);
+                    // Výpočet rozdělení vnější axiální síly na jednotlivá ložiska.
+                    // "notInfluenced" znamená, že se zatím nejedná o axiální síly ovlivněné generovanou axiální sílou působením radiální síly.
+                    // Funkce však zahrne do této síly předpětí v ložisku:
                     double notInfluencedFaFMB = CalculateFMBPartOfAxialForce(sumFa); // neovlivněno druhým ložiskem
                     double notInfluencedFaRMB = Math.Abs(sumFa - notInfluencedFaFMB);
                     bool FaIsPossitive = sumFa >= 0;
@@ -315,15 +332,25 @@ namespace WindDataProcessing
                     double generatedFaFromFMBFr;
                     try
                     {
-                        generatedFaFromFMBFr = CalculateGeneratedAxialForce3(CP.FMB, loadState.FMBState.FR, notInfluencedFaFMB).Result;
-                        generatedFaFromRMBFr = CalculateGeneratedAxialForce3(CP.RMB, loadState.RMBState.FR, notInfluencedFaRMB).Result;
+                        // Výpočet axiální síly, která se vygeneruje v ložisku, pokud na něj bude působit známá vnější axiální síla a k ní se přidá radiální síla:
+                        generatedFaFromFMBFr = CalculateGeneratedAxialForce(CP.FMB, loadState.FMBState.FR, notInfluencedFaFMB).Result;
+                        generatedFaFromRMBFr = CalculateGeneratedAxialForce(CP.RMB, loadState.RMBState.FR, notInfluencedFaRMB).Result;
                     }
                     catch (ForceRatioOutOfRangeException)
                     {
                         Console.WriteLine($"Problém v Load case {loadCase.Position}: {loadCase.Name}.");
                         throw;
                     }
+                    // Podmínky jsou tvořeny obdobně, jako je uvedeno v katalogu SKF (viz obr. přiložený v adresáři).
+                    // V tomto Katalogu je suma vnějších sil vždy kladná (mění se její směr) a je označována KA:
                     double KA = Math.Abs(sumFa);
+                    // Podmínek je 6 obdobně, jako ve zmiňovaném katalogu SKF. Podmínky jsou stejné, ale následný výpčet finálních axiálních sil je odlišný.
+                    // Princip je takový, že větší generovaná síla je "prohnána" funkcí pro zjištění poměrné části, která na ložisko působí (dle tuhostních křivek vygenerovaných v Mesys).
+                    // V případě, že vnější axiální síla působí jedním směrem (doprava pro podmínky 1 - 3), je použita funkce pro přední ložisko (FMB).
+                    // Získaná síla je přičtena vždy k axiální síle neovlivněné generovanou silou a to na tom ložisku,
+                    // na které působí síla získaná rozdílem vnějšího axiálního zatížení a větší generované axiální síly.
+                    // Zmiňovaná funkce přidává vliv předpětí, který je potřeba odečíst.
+                    // Axiální síla působící na druhé ložisko se pak dopočítá s využitím síly na první ložisko a s využitím statické rovnováhy.
                     double FaFMB, FaRMB;
                     if (FaIsPossitive)
                     {
@@ -352,7 +379,7 @@ namespace WindDataProcessing
                     }
                     else if (!FaIsPossitive)
                     {
-                        if (generatedFaFromRMBFr <= generatedFaFromFMBFr && KA >= 0)
+                        if (generatedFaFromRMBFr <= generatedFaFromFMBFr && KA >= 0) // 4
                         {
                             FaRMB = notInfluencedFaRMB + CalculateRMBPartOfAxialForce(-generatedFaFromFMBFr) - CP.AxialPreload;
                             FaFMB = FaRMB - KA;
@@ -393,6 +420,19 @@ namespace WindDataProcessing
             await Task.WhenAll();
         }
 
+        /// <summary>
+        /// Výpočet části axiální síly z celkové vnější, která bude působit na přední ložisko, zohledňující předpětí.
+        /// V komerčním software Mesys byl vytvořen kompletní model sestavy. Ložiska byla předepjata konkrétní axiální silou.
+        /// Sestava byla zatěžována vnější axiální silou od záporných hodnot do kladných a pro každé zatížení byly odečteny axiální deformace obou ložisek.
+        /// Z těchto hodnot vznikl graf, jako je na obr. 8.6 na str. 182 v knize Essential Concepts of Bearing Technology od Harrise. Kniha je v adresáři.
+        /// Jedná se tedy o dvě tuhostní křivky deformace-síla (pro každé ložisko jedna).
+        /// Tyto dvě křivky byly proloženy kvadratickou funkcí. Ta je popsána koeficienty a - f.
+        /// Tyto koeficienty jsou vstupem do výpočtu a s každou změnou tuhosti sestavy je třeba zjistit koeficienty nové.
+        /// Následně se provede odečtení těchto dvou funkcí od sebe.
+        /// Dosadí se vnější zatížení a vyjde pak nové zatížení, což je poměrná část, která působí na jedno z ložisek.
+        /// </summary>
+        /// <param name="sumFa">Celková vnější axiální síla</param>
+        /// <returns></returns>
         private double CalculateFMBPartOfAxialForce(double sumFa)
         {
             double a_d = CP.StiffnesCoefficient_a - CP.StiffnesCoefficient_d;
@@ -412,6 +452,19 @@ namespace WindDataProcessing
             return result;
         }
 
+        /// <summary>
+        /// Výpočet části axiální síly z celkové vnější, která bude působit na přední ložisko, zohledňující předpětí.
+        /// V komerčním software Mesys byl vytvořen kompletní model sestavy. Ložiska byla předepjata konkrétní axiální silou.
+        /// Sestava byla zatěžována vnější axiální silou od záporných hodnot do kladných a pro každé zatížení byly odečteny axiální deformace obou ložisek.
+        /// Z těchto hodnot vznikl graf, jako je na obr. 8.6 na str. 182 v knize Essential Concepts of Bearing Technology od Harrise. Kniha je v adresáři.
+        /// Jedná se tedy o dvě tuhostní křivky deformace-síla (pro každé ložisko jedna).
+        /// Tyto dvě křivky byly proloženy kvadratickou funkcí. Ta je popsána koeficienty a - f.
+        /// Tyto koeficienty jsou vstupem do výpočtu a s každou změnou tuhosti sestavy je třeba zjistit koeficienty nové.
+        /// Následně se provede odečtení těchto dvou funkcí od sebe.
+        /// Dosadí se vnější zatížení a vyjde pak nové zatížení, což je poměrná část, která působí na jedno z ložisek.
+        /// </summary>
+        /// <param name="sumFa">Celková vnější axiální síla</param>
+        /// <returns></returns>
         private double CalculateRMBPartOfAxialForce(double sumFa)
         {
             double a_d = CP.StiffnesCoefficient_a - CP.StiffnesCoefficient_d;
@@ -431,10 +484,43 @@ namespace WindDataProcessing
             return result;
         }
 
-        private Task<double> CalculateGeneratedAxialForce3(BearingParametersColection bearing, double FR, double notInfluencedFA)
+        /// <summary>
+        /// Výpočet generované axiální síly působením radiální síly. Zohledňuje působení vnější axiální síly včetně předpětí.
+        /// Bylo zjištěno (Mesys), že působením radiální síly se generuje různá axiální síla v závislosti na tom, jaká už na ložisko působí jiná axiální síla.
+        /// Proto je potřeba, aby vstupem od funkce byla kromě informací o ložisku a aplikované radiální síly i vnější (notInfluenced) axiální síla.
+        /// Pro výpočet axiální síly je využito přístupu popsaném v kapitole 7.5.1 SINGLE-ROW BEARINGS
+        /// - Bearings Under Combined Radial and Thrust Load, od str. 165, Harris, Essential Concepts of Bearing Technology.
+        /// Podstatné je využití tabulky 7.4 na str. 170, která dává do souvislosti:
+        ///     -   parametr epsilon (rozložení sil přes valivé elementy)
+        ///     -   poměr radiální a axiální síly Fr*tg(alpha)/Fa a
+        ///     -   Jr a Ja integrály
+        /// Dále pak využití vzorců 7.70 a 7.71, které říkají, že s využitím patřičných J integrálů lze vypočítát sílu na maximálně zatížený valivý element oběma způsoby,
+        /// tedy přes radiální sílu i přes axiální sílu.
+        /// Iterací jednoho z parametrů (např. poměru sil od 0 do 1) lze zjistit jeho správná hodnota,
+        /// což je ta, při které vychází stejná maximální síla na element Qmax z obou vzorců 7.70 i 7.71.
+        /// Touto iterací lze naléz více řešení.
+        /// Na základě spousty výpočtů bylo zjišteno, že tato řešení jsou vždy stejná, nezávisle na působících silách či geometrii ložiska.
+        /// Tato řešení jsou znázorněna na obrázku v dokumentu "Kořeny algoritmu řešení generovaných axiálních sil.pdf", přiložen v adresáři.
+        /// Tato řešení jsou nahrána jako Values of Dictionary "forceRatiosAccToLimits".
+        /// Na základě působící vnější axiální síly a působící radiální reakce jsou odhadnuty startovací hodnoty silového poměru.
+        /// Dle Keys of Dictionary "forceRatiosAccToLimits" se rozhodne, která výsledná hodnota silového poměru bude zvolena. Tyto Keys jsou meze,
+        /// které byly určeny odchylkou mezi dvěma silami Qmax(Fr) a Qmax(Fa).
+        /// Dle získaného silového poměru lze dopočítat axiální síla působicí na ložisko.
+        /// Rozdíl této síly a vnější axiální síly (notInfluencedFA) je generovaná axiální síla.
+        /// Nikdy nemůže být generovaná axiální síla menší, než 0.
+        /// </summary>
+        /// <param name="bearing">Ložisko s informacemi o kontaktním úhlu a počtu valivých elementů.</param>
+        /// <param name="FR">Aplikovaná radiální síla</param>
+        /// <param name="notInfluencedFA">Přítomná axiální síla včetně předpětí. Neovlivněná pouze generovanou axiální silou, která se má teprve vypočítat.</param>
+        /// <returns>Generovaná axiální síla působením radiální</returns>
+        private Task<double> CalculateGeneratedAxialForce(BearingParametersColection bearing, double FR, double notInfluencedFA)
         {
+            // Pokud je ložisko zevnějšku zatíženo pouze radiálně a nedisponuje vůlí, pak musí být dle tab. 7.4 silový poměr roven 0.7939 (eps = 0.5)
             const double forceRatioAtEps0_5 = 0.7939;
+            // Pro tento stav je vypočítána generovaná axiální síla:
             double FAproEps0_5 = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / forceRatioAtEps0_5;
+            // Startovací hodnota je vypočítána dosazením větší hodnoty axiální síly.
+            // Vybírá se mezi generovanou axiální silou pro eps = 0.5 a vnější axiální silou včetně předpětí (notInfluencedFA):
             double startingForceRatio = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / Math.Max(notInfluencedFA, FAproEps0_5);
             if (startingForceRatio > 1)
             {
@@ -462,272 +548,6 @@ namespace WindDataProcessing
                 }
             }
             throw new Exception("Chyba ve výpočtu silového poměru");
-        }
-
-        private async Task CalculateAxialReactions2(List<LoadCase> loadCases)
-        {
-            int loadCaseNumerator = 0;
-            Console.WriteLine();
-            foreach (LoadCase loadCase in loadCases)
-            {
-                int loadStateNumerator = 0;
-                foreach (LoadState loadState in loadCase.LoadStates)
-                {
-                    double sumFa = loadState.FX + CP.FgShaft * MV.MathOperation.Sind(6) + CP.FgGearbox * MV.MathOperation.Sind(6);
-                    double notInfluencedFaFMB = CalculateFMBPartOfAxialForce(sumFa); // neovlivněno druhým ložiskem
-                    double notInfluencedFaRMB = Math.Abs(sumFa - notInfluencedFaFMB);
-                    double FA_FMB, FA_RMB; int noCondition;
-                    try
-                    {
-                        (FA_FMB, FA_RMB, noCondition) = RecursivelyCalculateAxialReactions(loadState.FMBState.FR, loadState.RMBState.FR, notInfluencedFaFMB, notInfluencedFaRMB, sumFa);
-                    }
-                    catch (AxialReactionLessThanZeroException)
-                    {
-                        Console.WriteLine($"Problém v lc {loadCaseNumerator}: {loadCase.Name}");
-                        throw;
-                    }
-
-                    loadState.FMBState.FA = FA_FMB;
-                    loadState.RMBState.FA = FA_RMB;
-                    loadStateNumerator++;
-                    if (noCondition == 1)
-                    {
-                        loadCase.NoFirstCondition++;
-                    }
-                    else if (noCondition == 2)
-                    {
-                        loadCase.NoSecondCondition++;
-                    }
-                    else if (noCondition == 3)
-                    {
-                        loadCase.NoThirdCondition++;
-                    }
-                    else if (noCondition == 4)
-                    {
-                        loadCase.NoFourthCondition++;
-                    }
-                    else if (noCondition == 5)
-                    {
-                        loadCase.NoFifthCondition++;
-                    }
-                    else if (noCondition == 6)
-                    {
-                        loadCase.NoSixthCondition++;
-                    }
-                }
-                Console.Write($"\rLoad case {loadCaseNumerator++} axial reaction calculation finished.     ");
-            }
-
-            await Task.WhenAll();
-        }
-
-        private (double FA_FMB, double FA_RMB, int noCondition) RecursivelyCalculateAxialReactions(double FR_FMB, double FR_RMB, double FA_FMB_old, double FA_RMB_old, double sumFa)
-        {
-            bool FaIsPossitive = sumFa >= 0;
-            double generatedFaFromRMBFr;
-            double generatedFaFromFMBFr;
-            try
-            {
-                generatedFaFromFMBFr = CalculateGeneratedAxialForce3(CP.FMB, FR_FMB, FA_FMB_old).Result;
-                generatedFaFromRMBFr = CalculateGeneratedAxialForce3(CP.RMB, FR_RMB, FA_RMB_old).Result;
-            }
-            catch (ForceRatioOutOfRangeException)
-            {
-                //Console.WriteLine($"Problém v Load case {loadCaseNumerator}: {loadCase.Name}, Load state: {loadStateNumerator}.");
-                throw;
-            }
-
-            double KA = Math.Abs(sumFa);
-            //sumFa = Math.Abs(sumFa) + generatedFaFromRMBFr + generatedFaFromFMBFr;
-            //loadState.RMBState.FA = CalculateFMBPartOfAxialForce(sumFa);
-            //loadState.FMBState.FA = sumFa - loadState.RMBState.FA;
-            double FaFMB;
-            double FaRMB;
-            double sumFa2;
-            int noCondition;
-            if (FaIsPossitive)
-            {
-                if (generatedFaFromRMBFr >= generatedFaFromFMBFr && KA >= 0)
-                {
-                    //sumFa2 = KA + (generatedFaFromFMBFr + generatedFaFromRMBFr);
-                    FaFMB = FA_FMB_old + CalculateFMBPartOfAxialForce(generatedFaFromRMBFr /*+ generatedFaFromFMBFr*/) - CP.AxialPreload;//CalculateFMBPartOfAxialForce(sumFa2);
-                    FaRMB = FaFMB - KA;
-                    noCondition = 1;
-                }
-                else if (generatedFaFromRMBFr < generatedFaFromFMBFr && KA >= generatedFaFromFMBFr - generatedFaFromRMBFr)
-                {
-                    //sumFa2 = KA + (generatedFaFromFMBFr - generatedFaFromRMBFr);
-                    FaFMB = FA_FMB_old + CalculateFMBPartOfAxialForce(/*generatedFaFromRMBFr +*/ generatedFaFromFMBFr) - CP.AxialPreload; //CalculateFMBPartOfAxialForce(sumFa2)/* - generatedFaFromRMBFr*/; // Nemám odůvodnění odečtu generatedFaFromRMBFr, ale vychází to.
-                    FaRMB = FaFMB - KA;
-                    noCondition = 2;
-                }
-                else if (generatedFaFromRMBFr < generatedFaFromFMBFr && KA < generatedFaFromFMBFr - generatedFaFromRMBFr)
-                {
-                    //sumFa2 = KA - generatedFaFromFMBFr; // (KA - generatedFaFromRMBFr) - zkusit
-                    FaRMB = FA_RMB_old + CalculateFMBPartOfAxialForce(/*generatedFaFromRMBFr +*/ generatedFaFromFMBFr) - CP.AxialPreload; //CalculateRMBPartOfAxialForce(sumFa2)/* + generatedFaFromRMBFr*/; // Nemám odůvodnění přičtení generatedFaFromFMBFr, ale vychází to.
-                    FaFMB = FaRMB - KA;
-                    noCondition = 3;
-                }
-                else
-                {
-                    throw new Exception();
-                }
-            }
-            else if (!FaIsPossitive)
-            {
-                if (generatedFaFromRMBFr <= generatedFaFromFMBFr && KA >= 0) // 4
-                {
-                    FaRMB = FA_RMB_old + CalculateRMBPartOfAxialForce(/*-generatedFaFromRMBFr -*/ -generatedFaFromFMBFr) - CP.AxialPreload;
-                    FaFMB = FaRMB - KA;
-                    noCondition = 4;
-                }
-                else if (generatedFaFromRMBFr > generatedFaFromFMBFr && KA >= generatedFaFromRMBFr - generatedFaFromFMBFr) // 5
-                {
-                    FaRMB = FA_RMB_old + CalculateRMBPartOfAxialForce(-generatedFaFromRMBFr/* - generatedFaFromFMBFr*/) - CP.AxialPreload; //CalculateFMBPartOfAxialForce(sumFa2)/* - generatedFaFromRMBFr*/; // Nemám odůvodnění odečtu generatedFaFromRMBFr, ale vychází to.
-                    FaFMB = FaRMB - KA;
-                    noCondition = 5;
-                }
-                else if (generatedFaFromRMBFr > generatedFaFromFMBFr && KA < generatedFaFromRMBFr - generatedFaFromFMBFr) // 6
-                {
-                    FaFMB = FA_FMB_old + CalculateRMBPartOfAxialForce(-generatedFaFromRMBFr /*- generatedFaFromFMBFr*/) - CP.AxialPreload; //CalculateRMBPartOfAxialForce(sumFa2)/* + generatedFaFromRMBFr*/; // Nemám odůvodnění přičtení generatedFaFromFMBFr, ale vychází to.
-                    FaRMB = FaFMB - KA;
-                    noCondition = 6;
-                }
-                else
-                {
-                    throw new Exception();
-                }
-            }
-            else
-            {
-                throw new Exception();
-            }
-            //const double odchylka = 5000;
-            //if (FA_FMB_old > FaFMB - odchylka && FA_FMB_old < FaFMB + odchylka)
-            //{
-            if (FaFMB < 0 || FaRMB < 0)
-            {
-                throw new AxialReactionLessThanZeroException("Axiální reakce je menší, než 0.");
-            }
-            return (FaFMB, FaRMB, noCondition);
-            //}
-            //else
-            //{
-            //    return RecursivelyCalculateAxialReactions(FR_FMB, FR_RMB, FaFMB - generatedFaFromFMBFr, FaRMB - generatedFaFromRMBFr, sumFa);
-            //}
-        }
-
-        private Task<double> CalculateGeneratedAxialForce2(BearingParametersColection bearing, double FR, double notInfluencedFA)
-        {
-            Dictionary<double, double> deltaQmaxResults = new Dictionary<double, double>();
-            const double silovyPomerProEps0_5 = 0.7939;
-            double FAproEps0_5 = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / silovyPomerProEps0_5;
-            double silovyPomer = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / Math.Max(notInfluencedFA, FAproEps0_5); /*(FAproEps0_5 + notInfluencedFA);*/
-            if (silovyPomer > 1)
-            {
-                silovyPomer = 0.99999;
-            }
-            //double final = MV.Algorithm.MetodaPuleniIntervalu(CalculateAxialForceResiduum, new List<object> { bearing.ContactAngle, bearing.Z, FR, notInfluencedFA }, 0.86, 0.88, 0.000000001, 1000000);
-
-            double krok = -0.01;
-            for (; silovyPomer > 0; silovyPomer += krok)
-            {
-                double deltaQmax0 = CalculateDeltaQmaxDleSilovehoPomeru2(bearing.Z, bearing.ContactAngle, FR, silovyPomer);
-                deltaQmaxResults.Add(silovyPomer, deltaQmax0);
-            }
-
-            //if (FA - notInfluencedFA < 0)
-            //{
-            //    return Task.FromResult(0.0);
-            //}
-            //else
-            //{
-            //    return Task.FromResult(FA - notInfluencedFA);
-            //}
-            throw new NotImplementedException();
-        }
-
-        private Task<double> CalculateGeneratedAxialForce(BearingParametersColection bearing, double FR, double notInfluencedFA)
-        {
-            //double silovyPomer = MV.Algorithm.MetodaPuleniIntervalu(CalculateAxialForceResiduum, new List<object> { bearing.ContactAngle, bearing.Z, FR, notInfluencedFA }, 0.0, 1.0, 0.0001, 100000);
-            const double silovyPomerProEps0_5 = 0.7939;
-            const double correction = 1.0;
-            double FAproEps0_5 = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / silovyPomerProEps0_5;
-            double silovyPomer = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / Math.Max(notInfluencedFA, FAproEps0_5); /*(FAproEps0_5 + notInfluencedFA);*/
-            double startovaciSilovyPomer = silovyPomer;
-            if (silovyPomer > 1)
-            {
-                silovyPomer = 0.99999;
-            }
-            double krok = -0.001;
-            double deltaQmax0 = CalculateDeltaQmaxDleSilovehoPomeru(bearing.Z, bearing.ContactAngle, FR, silovyPomer);
-            silovyPomer += krok;
-            double deltaQmax1 = CalculateDeltaQmaxDleSilovehoPomeru(bearing.Z, bearing.ContactAngle, FR, silovyPomer);
-            if (deltaQmax1 > deltaQmax0)
-            {
-                krok = +0.001; // VyŘešit problém, co když to vyroste přes 1.
-                silovyPomer += 2 * krok;
-            }
-            double FA0 = 0;
-            double FA = FA0;
-            Dictionary<double, double> deltaQmaxResults = new Dictionary<double, double>();
-            bool ukoncitVeChviliKdyPoroste = false;
-            for (int i = 0; silovyPomer > 0 && silovyPomer < 1; i++)
-            {
-                double FA1 = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / silovyPomer;
-                double deltaQmaxNext = CalculateDeltaQmax(bearing.Z, bearing.ContactAngle, FR, FA1);
-                deltaQmaxResults.Add(silovyPomer, deltaQmaxNext);
-                if (deltaQmaxNext > deltaQmax0)
-                {
-                    FA = FA0;
-                    break;
-                }
-                else
-                {
-                    FA0 = FA1;
-                    deltaQmax0 = deltaQmaxNext;
-                    silovyPomer += krok;
-                }
-                //if (deltaQmaxNext > deltaQmax0)
-                //{
-                //    deltaQmax0 = deltaQmaxNext;
-                //    silovyPomer += krok;
-                //    if (ukoncitVeChviliKdyPoroste)
-                //    {
-                //        FA = FA0;
-                //        break;
-                //    }
-                //    else
-                //    {
-                //        FA0 = FA1;
-                //    }
-                //}
-                //else
-                //{
-                //    FA0 = FA1;
-                //    deltaQmax0 = deltaQmaxNext;
-                //    silovyPomer += krok;
-                //    ukoncitVeChviliKdyPoroste = true;
-                //}
-            }
-            if (silovyPomer >= 1)
-            {
-                throw new ForceRatioOutOfRangeException($"Silový poměr vyšel větší, než 1: {silovyPomer}");
-            }
-            if (silovyPomer > 0.7)
-            {
-                throw new Exception();
-            }
-            if (FA - notInfluencedFA < 0)
-            {
-                return Task.FromResult(0.0);
-            }
-            else
-            {
-                return Task.FromResult(FA - notInfluencedFA);
-            }
-            //double FA = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / silovyPomer;
-            //return Task.FromResult(FA - notInfluencedFA);
         }
 
         private double CalculateDeltaQmax(double Z, double contactAngle, double FR, double FA)

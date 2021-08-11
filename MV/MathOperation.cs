@@ -115,6 +115,12 @@ namespace MV
             return Math.Sqrt(Math.Pow(Ax - Bx, 2.0) + Math.Pow(Ay - By, 2.0));
         }
 
+        /// <summary>
+        /// Vypočítá délku přepony trojúhelníku
+        /// </summary>
+        /// <param name="cathetus1">Odvěsna 1</param>
+        /// <param name="cathetus2">Odvěsna 2</param>
+        /// <returns></returns>
         public static double LengthOfHypotenuse(double cathetus1, double cathetus2)
         {
             return Math.Sqrt(Math.Pow(cathetus1, 2.0) + Math.Pow(cathetus2, 2.0));

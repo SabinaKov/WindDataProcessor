@@ -345,6 +345,7 @@ namespace WindDataProcessing
                     // V tomto Katalogu je suma vnějších sil vždy kladná (mění se její směr) a je označována KA:
                     double KA = Math.Abs(sumFa);
                     // Podmínek je 6 obdobně, jako ve zmiňovaném katalogu SKF. Podmínky jsou stejné, ale následný výpčet finálních axiálních sil je odlišný.
+                    // Pro lepší pochopení principu doporučuji otevřít grafické znázornění podmínek: "Conditions for Axial reactions TRB.pdf"
                     // Princip je takový, že větší generovaná síla je "prohnána" funkcí pro zjištění poměrné části, která na ložisko působí (dle tuhostních křivek vygenerovaných v Mesys).
                     // V případě, že vnější axiální síla působí jedním směrem (doprava pro podmínky 1 - 3), je použita funkce pro přední ložisko (FMB).
                     // Získaná síla je přičtena vždy k axiální síle neovlivněné generovanou silou a to na tom ložisku,

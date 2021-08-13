@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindDataProcessing", "WindD
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GAMESA_01", "GAMESA_01\GAMESA_01.csproj", "{22C966FA-2919-4D7B-822D-627D05256295}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChinaVerification_01", "ChinaVerification_01\ChinaVerification_01.csproj", "{AA00A3D0-3770-4063-8881-0E20C9C0C668}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChinaVerification_01", "ChinaVerification_01\ChinaVerification_01.csproj", "{AA00A3D0-3770-4063-8881-0E20C9C0C668}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NanjingWP_01", "NanjingWP_01\NanjingWP_01.csproj", "{F4F21071-C502-4F86-8BFE-29331EC87AED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{AA00A3D0-3770-4063-8881-0E20C9C0C668}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA00A3D0-3770-4063-8881-0E20C9C0C668}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA00A3D0-3770-4063-8881-0E20C9C0C668}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4F21071-C502-4F86-8BFE-29331EC87AED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4F21071-C502-4F86-8BFE-29331EC87AED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4F21071-C502-4F86-8BFE-29331EC87AED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4F21071-C502-4F86-8BFE-29331EC87AED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

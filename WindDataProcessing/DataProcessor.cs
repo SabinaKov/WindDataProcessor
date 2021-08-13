@@ -66,6 +66,7 @@ namespace WindDataProcessing
             await CalculateRadialReactions(loadCases);
             Console.WriteLine("Radial reactions calculated. Axial reaction calculation started.");
             await CalculateAxialReactions(loadCases);
+            //TestFaReactions(loadCases);
             await CalculateEquivalentForces(loadCases);
             List<List<string>> exportData = PrepareDataToExport(loadCases);
             MV.FileProcessor.ExportCSV(exportData, ResultsDirectoryPath, @"results");
@@ -248,6 +249,7 @@ namespace WindDataProcessing
                             }
                             loadCase.LoadStates = loadStates;
                             loadCases.Add(loadCase);
+                            Console.Write($"\rLoading LTS to RAM: Load case {loadCasesNumerator++} of {nLoadCases} loaded.    ");
                         }
                         await Task.WhenAll();
                         break;
@@ -268,26 +270,43 @@ namespace WindDataProcessing
         /// <returns></returns>
         private async Task CalculateRadialReactions(List<LoadCase> loadCases)
         {
-            const double B_ = 1825 / 1000.0;
-            const double E_ = 2397 / 1000.0;
-            double a1 = CP.FMB.Arm_a / 1000.0;
-            const double b1 = 185 / 1000.0;
-            double a2 = CP.RMB.Arm_a / 1000.0;
-            const double b2 = 150 / 1000.0;
-            double A = a1 - b1 / 2.0;
-            double B = B_ + a2 - b2 / 2.0;
-            const double C = 637.5 / 1000.0;
-            double E = E_ - a2 + b2 / 2.0;
+            const double A = 2330 / 1000.0;
+            const double B = 2380 / 1000.0;
+            const double C = 1735 / 1000.0;
+            double a = CP.FMB.Arm_a / 1000.0;
+            const double b = 176 / 1000.0;
+            double E = a - b / 2.0;
+            double D = A - E;
+            const double F = 585 / 1000.0;
+            double G = E;
+            double H = C - G;
             double FgShaftZ = -CP.FgShaft * MV.MathOperation.Cosd(6);
             double FgGearboxZ = -CP.FgGearbox * MV.MathOperation.Cosd(6);
+            //const double B_ = 1825 / 1000.0;                   --- GAMESA
+            //const double E_ = 2397 / 1000.0;
+            //double a1 = CP.FMB.Arm_a / 1000.0;
+            //const double b1 = 185 / 1000.0;
+            //double a2 = CP.RMB.Arm_a / 1000.0;
+            //const double b2 = 150 / 1000.0;
+            //double A = a1 - b1 / 2.0;
+            //double B = B_ + a2 - b2 / 2.0;
+            //const double C = 637.5 / 1000.0;
+            //double E = E_ - a2 + b2 / 2.0;
+            //double FgShaftZ = -CP.FgShaft * MV.MathOperation.Cosd(6);
+            //double FgGearboxZ = -CP.FgGearbox * MV.MathOperation.Cosd(6);
             foreach (LoadCase loadCase in loadCases)
             {
                 foreach (LoadState loadState in loadCase.LoadStates)
                 {
-                    double Fy1 = -loadState.FY + (loadState.MZ + loadState.FY * A) / (A + B);
-                    double Fy2 = (-loadState.MZ - loadState.FY * A) / (A + B);
-                    double Fz2 = (loadState.MY - loadState.FZ * A - FgShaftZ * (A + C) - FgGearboxZ * (A + B + E)) / (A + B);
-                    double Fz1 = -loadState.FZ - FgShaftZ - Fz2 - FgGearboxZ;
+                    double Fy1 = -loadState.FY - (-loadState.MZ + loadState.FY * D) / (A + B + G - D); // Nanjing
+                    double Fy2 = (-loadState.MZ + loadState.FY * D) / (A + B + G - D);
+                    double Fz2 = (-loadState.MY - (FgShaftZ + FgGearboxZ + loadState.FZ) * D + FgShaftZ * (A + F) + FgGearboxZ * (A + B + C)) / (D - A - B - G);
+                    double Fz1 = -FgShaftZ - FgGearboxZ - loadState.FZ - Fz2;
+
+                    //double Fy1 = -loadState.FY + (loadState.MZ + loadState.FY * A) / (A + B);                         --- GAMESA
+                    //double Fy2 = (-loadState.MZ - loadState.FY * A) / (A + B);
+                    //double Fz2 = (loadState.MY - loadState.FZ * A - FgShaftZ * (A + C) - FgGearboxZ * (A + B + E)) / (A + B);
+                    //double Fz1 = -loadState.FZ - FgShaftZ - Fz2 - FgGearboxZ;
                     double Fr1 = MV.MathOperation.LengthOfHypotenuse(Fy1, Fz1);
                     double Fr2 = MV.MathOperation.LengthOfHypotenuse(Fy2, Fz2);
                     loadState.FMBState = new BearingState()
@@ -439,12 +458,13 @@ namespace WindDataProcessing
             double a_d = CP.StiffnesCoefficient_a - CP.StiffnesCoefficient_d;
             double b_e = CP.StiffnesCoefficient_b - CP.StiffnesCoefficient_e;
             double c_f_FA = CP.StiffnesCoefficient_c - CP.StiffnesCoefficient_f - sumFa;
-            double determinant = Math.Sqrt(Math.Pow(b_e, 2.0) - 4 * a_d * c_f_FA);
-            if (double.IsNaN(determinant))
-            {
-                throw new Exception("Determinant není číslo");
-            }
-            double x = (-b_e + determinant) / (2 * a_d);
+            //double determinant = Math.Sqrt(Math.Pow(b_e, 2.0) - 4 * a_d * c_f_FA);            --- GAMESA
+            //if (double.IsNaN(determinant))
+            //{
+            //    throw new Exception("Determinant není číslo");
+            //}
+            //double x = (-b_e + determinant) / (2 * a_d);
+            double x = sumFa / b_e;
             double result = CP.StiffnesCoefficient_a * Math.Pow(x, 2.0) + CP.StiffnesCoefficient_b * x + CP.StiffnesCoefficient_c;
             if (result < 0)
             {
@@ -471,12 +491,13 @@ namespace WindDataProcessing
             double a_d = CP.StiffnesCoefficient_a - CP.StiffnesCoefficient_d;
             double b_e = CP.StiffnesCoefficient_b - CP.StiffnesCoefficient_e;
             double c_f_FA = CP.StiffnesCoefficient_c - CP.StiffnesCoefficient_f - sumFa;
-            double determinant = Math.Sqrt(Math.Pow(b_e, 2.0) - 4 * a_d * c_f_FA);
-            if (double.IsNaN(determinant))
-            {
-                throw new Exception("Determinant není číslo");
-            }
-            double x = (-b_e + determinant) / (2 * a_d);
+            //double determinant = Math.Sqrt(Math.Pow(b_e, 2.0) - 4 * a_d * c_f_FA);                 --- GAMESA
+            //if (double.IsNaN(determinant))
+            //{
+            //    throw new Exception("Determinant není číslo");
+            //}
+            //double x = (-b_e + determinant) / (2 * a_d);
+            double x = sumFa / b_e;
             double result = CP.StiffnesCoefficient_d * Math.Pow(x, 2.0) + CP.StiffnesCoefficient_e * x + CP.StiffnesCoefficient_f;
             if (result < 0)
             {

@@ -34,7 +34,7 @@ namespace NanjingWP_01
             try
             {
                 Console.WriteLine("Path to the TXT file with Load Case Time Shares: ");
-                const int choosedSettings = 1;
+                const int choosedSettings = 2;
                 string loadCasesTimeShareFilePath = pathSettings[choosedSettings].Item1;
                 Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
                 Console.WriteLine("Path to the Project Directory: ");
@@ -62,12 +62,12 @@ namespace NanjingWP_01
                     FgGearbox = 255060,
                     AxialPreload = 500000,
                     n = 10.0 / 3.0,
-                    StiffnesCoefficient_a = 19178361.4,
-                    StiffnesCoefficient_b = 7178891.2,
-                    StiffnesCoefficient_c = 502272.7,
-                    StiffnesCoefficient_d = 19178361.4,
-                    StiffnesCoefficient_e = -7178891.2,
-                    StiffnesCoefficient_f = 502272.7,
+                    StiffnesCoefficient_a = 11377158,//19178361.4,
+                    StiffnesCoefficient_b = 10628715,//7178891.2,
+                    StiffnesCoefficient_c = 502388,//502272.7,
+                    StiffnesCoefficient_d = 11377158,//19178361.4,
+                    StiffnesCoefficient_e = -10628715,//-7178891.2,
+                    StiffnesCoefficient_f = 502388,//502272.7,
                     FMB = new BearingParametersColection()
                     {
                         ContactAngle = 18,

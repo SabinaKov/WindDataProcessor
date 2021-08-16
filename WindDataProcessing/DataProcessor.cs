@@ -66,7 +66,7 @@ namespace WindDataProcessing
             await CalculateRadialReactions(loadCases);
             Console.WriteLine("Radial reactions calculated. Axial reaction calculation started.");
             await CalculateAxialReactions(loadCases);
-            //TestFaReactions(loadCases);
+            TestFaReactions(loadCases);
             await CalculateEquivalentForces(loadCases);
             List<List<string>> exportData = PrepareDataToExport(loadCases);
             MV.FileProcessor.ExportCSV(exportData, ResultsDirectoryPath, @"results");
@@ -376,6 +376,7 @@ namespace WindDataProcessing
                     {
                         if (generatedFaFromRMBFr >= generatedFaFromFMBFr && KA >= 0) // 1
                         {
+                            //FaFMB = CalculateFMBPartOfAxialForce(KA + generatedFaFromRMBFr);
                             FaFMB = notInfluencedFaFMB + CalculateFMBPartOfAxialForce(generatedFaFromRMBFr) - CP.AxialPreload;
                             FaRMB = FaFMB - KA;
                             loadCase.NoFirstCondition++;
@@ -551,16 +552,17 @@ namespace WindDataProcessing
             // Pro následující proběhl výzkum a s mnoha výpočty. Iteračně byly nalezeny následující meze (keys) a jejich hodnoty (values):
             Dictionary<double, double> forceRatiosAccToLimits = new Dictionary<double, double>
             {
-                {0.06, 0.032643341},
-                {0.43, 0.275388920},
-                {0.80, 0.654691500},
-                {1.00, 0.879067460}
+                {0.80, 0.879067460},
+                {0.43, 0.654691500},
+                {0.06, 0.275388920},
+                {0.00, 0.032643341}
             };
             foreach (var item in forceRatiosAccToLimits)
             {
-                if (startingForceRatio < item.Key)
+                if (startingForceRatio > item.Key)
                 {
                     double forceRatio = item.Value;
+                    double ratioDifference = Math.Abs(forceRatio - startingForceRatio);
                     double FA = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / forceRatio;
                     if (FA - notInfluencedFA < 0)
                     {
@@ -570,6 +572,119 @@ namespace WindDataProcessing
                 }
             }
             throw new Exception("Chyba ve výpočtu silového poměru");
+        }
+
+        private Task<double> CalculateGeneratedAxialForce2(BearingParametersColection bearing, double FR, double notInfluencedFA)
+        {
+            Dictionary<double, double> deltaQmaxResults = new Dictionary<double, double>();
+            const double silovyPomerProEps0_5 = 0.7939;
+            double FAproEps0_5 = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / silovyPomerProEps0_5;
+            double silovyPomer = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / Math.Max(notInfluencedFA, FAproEps0_5); /*(FAproEps0_5 + notInfluencedFA);*/
+            if (silovyPomer > 1)
+            {
+                silovyPomer = 0.99999;
+            }
+            //double final = MV.Algorithm.MetodaPuleniIntervalu(CalculateAxialForceResiduum, new List<object> { bearing.ContactAngle, bearing.Z, FR, notInfluencedFA }, 0.86, 0.88, 0.000000001, 1000000);
+
+            double krok = -0.01;
+            for (; silovyPomer > 0; silovyPomer += krok)
+            {
+                double deltaQmax0 = CalculateDeltaQmaxDleSilovehoPomeru2(bearing.Z, bearing.ContactAngle, FR, silovyPomer);
+                deltaQmaxResults.Add(silovyPomer, deltaQmax0);
+            }
+
+            //if (FA - notInfluencedFA < 0)
+            //{
+            //    return Task.FromResult(0.0);
+            //}
+            //else
+            //{
+            //    return Task.FromResult(FA - notInfluencedFA);
+            //}
+            throw new NotImplementedException();
+        }
+
+        private Task<double> CalculateGeneratedAxialForce3(BearingParametersColection bearing, double FR, double notInfluencedFA)
+        {
+            //double silovyPomer = MV.Algorithm.MetodaPuleniIntervalu(CalculateAxialForceResiduum, new List<object> { bearing.ContactAngle, bearing.Z, FR, notInfluencedFA }, 0.0, 1.0, 0.0001, 100000);
+            const double silovyPomerProEps0_5 = 0.7939;
+            const double correction = 1.0;
+            double FAproEps0_5 = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / silovyPomerProEps0_5;
+            double silovyPomer = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / Math.Max(notInfluencedFA, FAproEps0_5); /*(FAproEps0_5 + notInfluencedFA);*/
+            double startovaciSilovyPomer = silovyPomer;
+            if (silovyPomer > 1)
+            {
+                silovyPomer = 0.99999;
+            }
+            double krok = -0.000001;
+            double deltaQmax0 = CalculateDeltaQmaxDleSilovehoPomeru(bearing.Z, bearing.ContactAngle, FR, silovyPomer);
+            silovyPomer += krok;
+            double deltaQmax1 = CalculateDeltaQmaxDleSilovehoPomeru(bearing.Z, bearing.ContactAngle, FR, silovyPomer);
+            if (deltaQmax1 > deltaQmax0)
+            {
+                krok = +0.000001; // VyŘešit problém, co když to vyroste přes 1.
+                silovyPomer += 2 * krok;
+            }
+            double FA0 = 0;
+            double FA = FA0;
+            Dictionary<double, double> deltaQmaxResults = new Dictionary<double, double>();
+            bool ukoncitVeChviliKdyPoroste = false;
+            for (int i = 0; silovyPomer > 0 && silovyPomer < 1; i++)
+            {
+                double FA1 = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / silovyPomer;
+                double deltaQmaxNext = CalculateDeltaQmax(bearing.Z, bearing.ContactAngle, FR, FA1);
+                deltaQmaxResults.Add(silovyPomer, deltaQmaxNext);
+                if (deltaQmaxNext > deltaQmax0)
+                {
+                    FA = FA0;
+                    break;
+                }
+                else
+                {
+                    FA0 = FA1;
+                    deltaQmax0 = deltaQmaxNext;
+                    silovyPomer += krok;
+                }
+                //if (deltaQmaxNext > deltaQmax0)
+                //{
+                //    deltaQmax0 = deltaQmaxNext;
+                //    silovyPomer += krok;
+                //    if (ukoncitVeChviliKdyPoroste)
+                //    {
+                //        FA = FA0;
+                //        break;
+                //    }
+                //    else
+                //    {
+                //        FA0 = FA1;
+                //    }
+                //}
+                //else
+                //{
+                //    FA0 = FA1;
+                //    deltaQmax0 = deltaQmaxNext;
+                //    silovyPomer += krok;
+                //    ukoncitVeChviliKdyPoroste = true;
+                //}
+            }
+            if (silovyPomer >= 1)
+            {
+                throw new ForceRatioOutOfRangeException($"Silový poměr vyšel větší, než 1: {silovyPomer}");
+            }
+            if (silovyPomer > 0.7)
+            {
+                throw new Exception();
+            }
+            if (FA - notInfluencedFA < 0)
+            {
+                return Task.FromResult(0.0);
+            }
+            else
+            {
+                return Task.FromResult(FA - notInfluencedFA);
+            }
+            //double FA = (FR * MV.MathOperation.Tand(bearing.ContactAngle)) / silovyPomer;
+            //return Task.FromResult(FA - notInfluencedFA);
         }
 
         private double CalculateDeltaQmax(double Z, double contactAngle, double FR, double FA)

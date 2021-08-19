@@ -10,11 +10,13 @@ namespace WindDataProcessing
 {
     public class DataProcessor
     {
-        public DataProcessor(string loadCasesTimeShareFilePath, string projectDirectoryPath, string resultsDirectoryPath)
+        public DataProcessor(string loadCasesTimeShareFilePath, string projectDirectoryPath, string resultsDirectoryPath, string stifnessesFMBFilePath, string stifnessesRMBFilePath)
         {
             LoadCasesTimeShareFilePath = loadCasesTimeShareFilePath;
             ProjectDirectoryPath = projectDirectoryPath;
             ResultsDirectoryPath = resultsDirectoryPath;
+            StiffnessFMBDataFilePath = stifnessesFMBFilePath;
+            StiffnessRMBDataFilePath = stifnessesRMBFilePath;
             SourceDataColumn = new SourceDataColumnPosition();
         }
 
@@ -49,6 +51,8 @@ namespace WindDataProcessing
 
         public double ConvertSpeedMultiplyBy { get; set; } = 1.0;
         public CalculationParametersCollection CP { get; set; }
+        public string StiffnessFMBDataFilePath { get; set; }
+        public string StiffnessRMBDataFilePath { get; set; }
 
         /// <summary>
         /// Vypočítá reakce v ložiscích
@@ -341,6 +345,9 @@ namespace WindDataProcessing
                 {
                     // V první řadě se vypočíta suma vnějšíxh axiálních sil, které půosbí na hřídeli:
                     double sumFa = loadState.FX + CP.FgShaft * MV.MathOperation.Sind(6) + CP.FgGearbox * MV.MathOperation.Sind(6);
+                    AxialReactionCalculator axialReactionCalculator = new AxialReactionCalculator(StiffnessFMBDataFilePath, StiffnessRMBDataFilePath);
+                    double FaFMB = axialReactionCalculator.CaluclateFaFMB(loadState.FMBState.FR, loadState.RMBState.FR, sumFa);
+                    double FaRMB = FaFMB + sumFa;
                     // Výpočet rozdělení vnější axiální síly na jednotlivá ložiska.
                     // "notInfluenced" znamená, že se zatím nejedná o axiální síly ovlivněné generovanou axiální sílou působením radiální síly.
                     // Funkce však zahrne do této síly předpětí v ložisku:
@@ -352,8 +359,8 @@ namespace WindDataProcessing
                     try
                     {
                         // Výpočet axiální síly, která se vygeneruje v ložisku, pokud na něj bude působit známá vnější axiální síla a k ní se přidá radiální síla:
-                        generatedFaFromFMBFr = CalculateGeneratedAxialForce(CP.FMB, loadState.FMBState.FR, notInfluencedFaFMB).Result;
-                        generatedFaFromRMBFr = CalculateGeneratedAxialForce(CP.RMB, loadState.RMBState.FR, notInfluencedFaRMB).Result;
+                        generatedFaFromFMBFr = CalculateGeneratedAxialForceOptimized(CP.FMB, loadState.FMBState.FR, notInfluencedFaFMB);
+                        generatedFaFromRMBFr = CalculateGeneratedAxialForceOptimized(CP.RMB, loadState.RMBState.FR, notInfluencedFaRMB);
                     }
                     catch (ForceRatioOutOfRangeException)
                     {
@@ -371,26 +378,25 @@ namespace WindDataProcessing
                     // na které působí síla získaná rozdílem vnějšího axiálního zatížení a větší generované axiální síly.
                     // Zmiňovaná funkce přidává vliv předpětí, který je potřeba odečíst.
                     // Axiální síla působící na druhé ložisko se pak dopočítá s využitím síly na první ložisko a s využitím statické rovnováhy.
-                    double FaFMB, FaRMB;
+
                     if (FaIsPossitive)
                     {
                         if (generatedFaFromRMBFr >= generatedFaFromFMBFr && KA >= 0) // 1
                         {
-                            //FaFMB = CalculateFMBPartOfAxialForce(KA + generatedFaFromRMBFr);
-                            FaFMB = notInfluencedFaFMB + CalculateFMBPartOfAxialForce(generatedFaFromRMBFr) - CP.AxialPreload;
-                            FaRMB = FaFMB - KA;
+                            FaRMB = notInfluencedFaRMB + generatedFaFromRMBFr;
+                            FaFMB = FaRMB + KA;
                             loadCase.NoFirstCondition++;
                         }
                         else if (generatedFaFromRMBFr < generatedFaFromFMBFr && KA >= generatedFaFromFMBFr - generatedFaFromRMBFr) // 2
                         {
-                            FaFMB = notInfluencedFaFMB + CalculateFMBPartOfAxialForce(generatedFaFromFMBFr) - CP.AxialPreload;
-                            FaRMB = FaFMB - KA;
+                            FaRMB = notInfluencedFaRMB + generatedFaFromRMBFr;
+                            FaFMB = FaRMB + KA;
                             loadCase.NoSecondCondition++;
                         }
                         else if (generatedFaFromRMBFr < generatedFaFromFMBFr && KA < generatedFaFromFMBFr - generatedFaFromRMBFr) // 3
                         {
-                            FaRMB = notInfluencedFaRMB + CalculateFMBPartOfAxialForce(generatedFaFromFMBFr) - CP.AxialPreload;
-                            FaFMB = FaRMB + KA;
+                            FaFMB = notInfluencedFaFMB + generatedFaFromFMBFr;
+                            FaRMB = FaFMB - KA;
                             loadCase.NoThirdCondition++;
                         }
                         else
@@ -402,20 +408,20 @@ namespace WindDataProcessing
                     {
                         if (generatedFaFromRMBFr <= generatedFaFromFMBFr && KA >= 0) // 4
                         {
-                            FaRMB = notInfluencedFaRMB + CalculateRMBPartOfAxialForce(-generatedFaFromFMBFr) - CP.AxialPreload;
-                            FaFMB = FaRMB - KA;
+                            FaFMB = notInfluencedFaFMB + generatedFaFromFMBFr;
+                            FaRMB = FaFMB + KA;
                             loadCase.NoFourthCondition++;
                         }
                         else if (generatedFaFromRMBFr > generatedFaFromFMBFr && KA >= generatedFaFromRMBFr - generatedFaFromFMBFr) // 5
                         {
-                            FaRMB = notInfluencedFaRMB + CalculateRMBPartOfAxialForce(-generatedFaFromRMBFr) - CP.AxialPreload;
-                            FaFMB = FaRMB - KA;
+                            FaFMB = notInfluencedFaFMB + generatedFaFromFMBFr;
+                            FaRMB = FaFMB + KA;
                             loadCase.NoFifthCondition++;
                         }
                         else if (generatedFaFromRMBFr > generatedFaFromFMBFr && KA < generatedFaFromRMBFr - generatedFaFromFMBFr) // 6
                         {
-                            FaFMB = notInfluencedFaFMB + CalculateRMBPartOfAxialForce(-generatedFaFromRMBFr) - CP.AxialPreload;
-                            FaRMB = FaFMB + KA;
+                            FaRMB = notInfluencedFaRMB + generatedFaFromRMBFr;
+                            FaFMB = FaRMB - KA;
                             loadCase.NoSixthCondition++;
                         }
                         else
@@ -439,6 +445,47 @@ namespace WindDataProcessing
             }
 
             await Task.WhenAll();
+        }
+
+        private double CalculateGeneratedAxialForceOptimized(BearingParametersColection bearing, double FR, double NI)
+        {
+            double forceRatio = FR * MV.MathOperation.Tand(bearing.ContactAngle) / NI;
+            if (forceRatio <= bearing.ForceGenerationCoef_a02)
+            {
+                return 0.0;
+            }
+            double C = bearing.ForceGenerationCoef_a01 * Math.Atan(forceRatio - bearing.ForceGenerationCoef_a02);
+            return C * FR / bearing.Y1;
+        }
+
+        private double _FaGen;
+
+        private Task<double> CalculateGeneratedAxialForceSimple(BearingParametersColection bearing, double FR, double notInfluencedFA)
+        {
+            //double forceRatio = MV.Algorithm.MetodaPuleniIntervalu(GeneratedAxialForceFunction, new List<object> { bearing, FR, notInfluencedFA }, 0.00001, 0.85, 0.00001, 10000);
+            //return Task.FromResult(_FaGen);
+            double forceRatio = 0.0001;
+            double krok = 0.01;
+            Dictionary<double, double> odchylky = new Dictionary<double, double>();
+            for (int i = 0; i < 100; i++)
+            {
+                forceRatio += krok;
+                double odchylka = GeneratedAxialForceFunction(forceRatio, new List<object> { bearing, FR, notInfluencedFA });
+                double FaGen = _FaGen;
+                odchylky.Add(FaGen, odchylka);
+            }
+            throw new NotImplementedException();
+        }
+
+        private double GeneratedAxialForceFunction(double forceRatio, List<object> objects)
+        {
+            BearingParametersColection bearing = (BearingParametersColection)objects[0];
+            double FR = (double)objects[1];
+            double NI = (double)objects[2];
+            double FA = FR * MV.MathOperation.Tand(bearing.ContactAngle) / forceRatio;
+            double C = -0.5553 * forceRatio + 0.9432;
+            _FaGen = C * FR / bearing.Y1;
+            return FA - _FaGen;
         }
 
         /// <summary>

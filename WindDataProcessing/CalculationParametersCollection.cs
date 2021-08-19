@@ -63,5 +63,8 @@ namespace WindDataProcessing
         /// Rameno, na kterém působí radiální reakce ložiska. Závislé na úhlu styku.
         /// </summary>
         public double Arm_a { get; set; }
+
+        public double ForceGenerationCoef_a01 { get; set; }
+        public double ForceGenerationCoef_a02 { get; set; }
     }
 }

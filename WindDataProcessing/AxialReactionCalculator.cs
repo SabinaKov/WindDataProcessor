@@ -39,14 +39,32 @@ namespace WindDataProcessing
             return InterpolateDisplacement(KAstiffnessCurve, KA);
         }
 
-        private double InterpolateDisplacement(List<StiffnessPoint> kAstiffnessCurve, double kA)
+        private double InterpolateDisplacement(List<StiffnessPoint> KAstiffnessCurve, double KA)
         {
-            throw new NotImplementedException();
+            List<double> KaData = new List<double>();
+            List<double> displData = new List<double>();
+            for (int i = 0; i < KAstiffnessCurve.Count; i++)
+            {
+                KaData.Add(KAstiffnessCurve[i].Fa);
+                displData.Add(KAstiffnessCurve[i].Ua);
+            }
+
+            double displacement = MV.Algorithm.LinearInterpolationOfPoint(KA, KaData, displData);
+            return displacement;
         }
 
         private List<StiffnessPoint> CalculateKAstiffnessCurve(StiffnessCurve stiffnessCurveFMB, StiffnessCurve stiffnessCurveRMB)
         {
-            throw new NotImplementedException();
+            List<StiffnessPoint> KaStiffnessCurve = new List<StiffnessPoint>();
+            for (int i = 0; i < stiffnessCurveFMB.StiffnessPoints.Count; i++)
+            {
+                double Ua = stiffnessCurveFMB.StiffnessPoints[i].Ua;
+                var stifnessPointsRMB = stiffnessCurveRMB.StiffnessPoints;
+                int posOfUaInRMB = stifnessPointsRMB.IndexOf(stifnessPointsRMB.Where(x => x.Ua == Ua).FirstOrDefault());
+                double Ka = stiffnessCurveFMB.StiffnessPoints[i].Fa - stiffnessCurveRMB.StiffnessPoints[posOfUaInRMB].Fa;
+                KaStiffnessCurve.Add(new StiffnessPoint { Ua = Ua, Fa = Ka });
+            }
+            return KaStiffnessCurve;
         }
     }
 
@@ -61,14 +79,36 @@ namespace WindDataProcessing
 
         internal StiffnessCurve InterpolateStifnessCurveFor(double Fr)
         {
-            throw new NotImplementedException();
+            List<List<double>> FaData = new List<List<double>>();
+            List<double> FrData = new List<double>();
+            List<double> UaData = new List<double>();
+            foreach (StiffnessCurve stiffnessCurve in StiffnessCurves)
+            {
+                FrData.Add(stiffnessCurve.Fr);
+                FaData.Add(new List<double>());
+                foreach (StiffnessPoint stiffnessPoint1 in stiffnessCurve.StiffnessPoints)
+                {
+                    FaData.LastOrDefault().Add(stiffnessPoint1.Fa);
+                }
+            }
+            foreach (StiffnessPoint stiffnessPoint2 in StiffnessCurves.FirstOrDefault().StiffnessPoints)
+            {
+                UaData.Add(stiffnessPoint2.Ua);
+            }
+            List<double> FaInterpolated = MV.Algorithm.LinearInterpolationOfCurve(Fr, FrData, FaData);
+            StiffnessCurve interpolatedStiffnessCurve = new StiffnessCurve { Fr = Fr, StiffnessPoints = new List<StiffnessPoint>() };
+            for (int i = 0; i < FaInterpolated.Count; i++)
+            {
+                interpolatedStiffnessCurve.StiffnessPoints.Add(new StiffnessPoint { Ua = UaData[i], Fa = FaInterpolated[i] });
+            }
+            return interpolatedStiffnessCurve;
         }
 
         private void LoadStiffnessCurves(string stiffnessDataFilePath)
         {
             StiffnessCurves = new List<StiffnessCurve>();
             Dictionary<Tuple<int, int>, string> stringData = MV.FileProcessor.LoadDataFromFile_csvSemicolon(stiffnessDataFilePath);
-            int lastRow = stringData.Select(_ => _.Key.Item1).Max();
+            int lastRow = stringData.Select(_ => _.Key.Item1).Max() + 1;
             double lastFr = -1.0;
             const int startingRow = 1;
             for (int r = startingRow; r < lastRow; r++)
@@ -93,7 +133,15 @@ namespace WindDataProcessing
 
         internal double InterpolateFaFor(double displacement)
         {
-            throw new NotImplementedException();
+            List<double> displacements = new List<double>();
+            List<double> forces = new List<double>();
+            for (int i = 0; i < StiffnessPoints.Count; i++)
+            {
+                displacements.Add(StiffnessPoints[i].Ua);
+                forces.Add(StiffnessPoints[i].Fa);
+            }
+            double FA = MV.Algorithm.LinearInterpolationOfPoint(displacement, displacements, forces);
+            return FA;
         }
     }
 

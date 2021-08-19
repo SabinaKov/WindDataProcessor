@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -51,6 +52,47 @@ namespace MV
                 }
             }
             throw new Exception("Max number of iterations of Bisection Method was achieved.");
+        }
+
+        public static double LinearInterpolationOfPoint(double X, List<double> xData, List<double> yData)
+        {
+            (int lowerPosX, int higherPosX) = LocatePosition(X, xData);
+            double yInterpolated = LinearniInterpolace(xData[lowerPosX], yData[lowerPosX], xData[higherPosX], yData[higherPosX], X);
+            return yInterpolated;
+        }
+
+        /// <summary>
+        /// Only for the same X data. Works only for ordered Zdata, ascending. Z must be inside interval, only interpolation
+        /// </summary>
+        /// <param name="Z"></param>
+        /// <param name="Zdata"></param>
+        /// <param name="Ydata"></param>
+        /// <returns></returns>
+        public static List<double> LinearInterpolationOfCurve(double Z, List<double> Zdata, List<List<double>> Ydata)
+        {
+            List<double> interpolatedCurve = new List<double>();
+            (int lowerPosZ, int higherPosZ) = LocatePosition(Z, Zdata);
+            for (int i = 0; i < Ydata.FirstOrDefault().Count; i++)
+            {
+                double yInterpolated = LinearniInterpolace(Zdata[lowerPosZ], Ydata[lowerPosZ][i], Zdata[higherPosZ], Ydata[higherPosZ][i], Z);
+                interpolatedCurve.Add(yInterpolated);
+            }
+            return interpolatedCurve;
+        }
+
+        private static (int lowerPos, int higherPos) LocatePosition(double val, List<double> data)
+        {
+            int lowerPos, higherPos;
+            for (int z = 0; z < data.Count; z++)
+            {
+                if (val < data[z])
+                {
+                    lowerPos = z - 1;
+                    higherPos = z;
+                    return (lowerPos, higherPos);
+                }
+            }
+            throw new Exception("Not Located position in border data for interpolation");
         }
 
         /// <summary>

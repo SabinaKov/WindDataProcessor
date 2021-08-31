@@ -147,6 +147,9 @@ namespace WindDataProcessing
 
     internal class StiffnessPoint
     {
+        /// <summary>
+        /// Axial force
+        /// </summary>
         internal double Fa { get; set; }
 
         /// <summary>

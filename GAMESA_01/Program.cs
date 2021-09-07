@@ -12,38 +12,49 @@ namespace GAMESA_01
         /// 1. string tuplu - cesta k souboru se seznamem LoadCase (1. sloupec) a jejich četnosti (2. sloupec) - CSV soubor oddělený středníky.
         /// 2. string tuplu - adresář, ve kterém jsou uloženy data se zátěžnými stavy (LTS).
         /// 3. string tuplu - adresář, kam se mají uložit výsledky.
+        /// /// 4. string tuplu - cesta k souboru s tuhostmi
         /// </summary>
-        internal static Dictionary<int, Tuple<string, string, string>> pathSettings = new Dictionary<int, Tuple<string, string, string>>
+        internal static Dictionary<int, Tuple<string, string, string, string, string>> pathSettings = new Dictionary<int, Tuple<string, string, string, string, string>>
                 {
-                    { 1, new Tuple<string, string, string>
+                    { 1, new Tuple<string, string, string, string, string>
                         (
                             @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD.csv",
                             @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData\SG5x_LDD",
-                            @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData"
+                            @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\WindDataProcessing\TestovaciData",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\výpočet dle tuhostních křivek\FMB_tuh_křivky.csv",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\výpočet dle tuhostních křivek\RMB_tuh_křivky.csv"
                         )},
-                    { 2, new Tuple<string, string, string>
+                    { 2, new Tuple<string, string, string, string, string>
                         (
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\testRates.csv",
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\Test",
-                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076"
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\výpočet dle tuhostních křivek\FMB_tuh_křivky.csv",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\výpočet dle tuhostních křivek\RMB_tuh_křivky.csv"
                         )},
-                    { 3, new Tuple<string, string, string>
+                    { 3, new Tuple<string, string, string, string, string>
                         (
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\PRJ-6076_rates.csv",
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\PRJ-6076_TIMESERIES",
-                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076"
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\výpočet dle tuhostních křivek\FMB_tuh_křivky.csv",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\výpočet dle tuhostních křivek\RMB_tuh_křivky.csv"
                         )},
-                    { 4, new Tuple<string, string, string>
+                    { 4, new Tuple<string, string, string, string, string>
                         (
                             @"\\brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrané LC redukované pro Miru\list.csv",
                             @"\\brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrané LC redukované pro Miru\LTS",
-                            @"\\brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrané LC redukované pro Miru"
+                            @"\\brn-fs-01\data _zkl\Data\ZKL VaV\Exchange\Novák\Vybrané LC redukované pro Miru",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\výpočet dle tuhostních křivek\FMB_tuh_křivky.csv",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\výpočet dle tuhostních křivek\RMB_tuh_křivky.csv"
                         )},
-                    { 5, new Tuple<string, string, string>
+                    { 5, new Tuple<string, string, string, string, string>
                         (
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6144\PRJ-6144_rates.csv",
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6144\PRJ-6144_TIMESERIES",
-                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6144"
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6144",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\výpočet dle tuhostních křivek\FMB_tuh_křivky.csv",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG5x\OneDrive_2020-04-17\PRJ-6076\výpočet dle tuhostních křivek\RMB_tuh_křivky.csv"
                         )}
                 };
 
@@ -61,7 +72,9 @@ namespace GAMESA_01
                 Console.WriteLine("Path to the Directory where results will be saved: ");
                 string resultsDirectoryPath = pathSettings[choosedSettings].Item3;
                 Console.WriteLine($"You set: {resultsDirectoryPath}");
-                DataProcessor dataProcessor = new DataProcessor(loadCasesTimeShareFilePath, projectDirectoryPath, resultsDirectoryPath)
+                string stifnessesFMBFilePath = pathSettings[choosedSettings].Item4;
+                string stifnessesRMBFilePath = pathSettings[choosedSettings].Item5;
+                DataProcessor dataProcessor = new DataProcessor(loadCasesTimeShareFilePath, projectDirectoryPath, resultsDirectoryPath, stifnessesFMBFilePath, stifnessesRMBFilePath)
                 {
                     SourceDataType = Enums.SourceDataType.CSV,
                     SourceDataFirstLine = 19,
@@ -99,7 +112,7 @@ namespace GAMESA_01
                         Arm_a = 249.85
                     }
                 };
-
+                //await dataProcessor.FindMinMaxRadialReactions();
                 await dataProcessor.BearingReactions();
                 //await dataProcessor.LDDlifesTester(); //- Vývoj
                 //await dataProcessor.Process(); - vytvoří LDD

@@ -83,16 +83,17 @@ namespace MV
         private static (int lowerPos, int higherPos) LocatePosition(double val, List<double> data)
         {
             int lowerPos, higherPos;
-            for (int z = 0; z < data.Count; z++)
+            higherPos = data.IndexOf(data.Select(x => (x < val, x)).Min().Item2);
+            if (higherPos is -1)
             {
-                if (val < data[z])
-                {
-                    lowerPos = z - 1;
-                    higherPos = z;
-                    return (lowerPos, higherPos);
-                }
+                throw new Exception($"Not Located position above data border for interpolation. Val is: {val}, max border is {data.Max()}");
             }
-            throw new Exception("Not Located position in border data for interpolation");
+            lowerPos = higherPos - 1;
+            if (lowerPos is -1)
+            {
+                throw new Exception($"Not Located position under data norder for interpolation. Val is: {val}, min border is {data.Min()}");
+            }
+            return (lowerPos, higherPos);
         }
 
         /// <summary>

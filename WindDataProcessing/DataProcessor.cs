@@ -194,6 +194,45 @@ namespace WindDataProcessing
             return loadCases;
         }
 
+        public async Task FindMinMaxRadialReactions()
+        {
+            Console.WriteLine("Process started!");
+            // V první řadě je třeba načíst data z disku do RAM.
+            // Nejdřív se připraví List of Load Case na základě seznamu Load Case:
+            List<LoadCase> loadCasesWithoutLoadStates = LoadLoadCaseData();
+            // Následně se do Listu Load Case načtou jednotivé zátěžné stavy (Load State):
+            List<LoadCase> loadCases = await PopulateLoadCasesWithLoadStatesAsync(loadCasesWithoutLoadStates);
+            Console.WriteLine("Load states loaded. Radial reaction calculation started.");
+            await CalculateRadialReactions(loadCases);
+            Console.WriteLine("Radial reactions calculated. Extrems location started.");
+            List<List<string>> exportData = FindRadialForceExtrems(loadCases);
+            MV.FileProcessor.ExportCSV(exportData, ResultsDirectoryPath, @"radial_force_extrems");
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine("Done.");
+            Console.WriteLine();
+            Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
+            Console.Beep();
+        }
+
+        private List<List<string>> FindRadialForceExtrems(List<LoadCase> loadCases)
+        {
+            List<List<string>> extrems = new List<List<string>>
+            {
+                new List<string>(), new List<string>(), new List<string>()
+            };
+            extrems[0].Add("");
+            extrems[0].Add("FMB");
+            extrems[0].Add("RMB");
+            extrems[1].Add("Min:");
+            extrems[1].Add(loadCases.SelectMany(x => x.LoadStates.Select(y => y.FMBState.FR)).Min().ToString());
+            extrems[1].Add(loadCases.SelectMany(x => x.LoadStates.Select(y => y.RMBState.FR)).Min().ToString());
+            extrems[2].Add("Max:");
+            extrems[2].Add(loadCases.SelectMany(x => x.LoadStates.Select(y => y.FMBState.FR)).Max().ToString());
+            extrems[2].Add(loadCases.SelectMany(x => x.LoadStates.Select(y => y.RMBState.FR)).Max().ToString());
+            return extrems;
+        }
+
         private async Task<List<LoadCase>> PopulateLoadCasesWithLoadStatesAsync(List<LoadCase> loadCasesWithoutLoadStates)
         {
             List<LoadCase> loadCases = new List<LoadCase>();
@@ -274,43 +313,43 @@ namespace WindDataProcessing
         /// <returns></returns>
         private async Task CalculateRadialReactions(List<LoadCase> loadCases)
         {
-            const double A = 2330 / 1000.0;
-            const double B = 2380 / 1000.0;
-            const double C = 1735 / 1000.0;
-            double a = CP.FMB.Arm_a / 1000.0;
-            const double b = 176 / 1000.0;
-            double E = a - b / 2.0;
-            double D = A - E;
-            const double F = 585 / 1000.0;
-            double G = E;
-            double H = C - G;
-            double FgShaftZ = -CP.FgShaft * MV.MathOperation.Cosd(6);
-            double FgGearboxZ = -CP.FgGearbox * MV.MathOperation.Cosd(6);
-            //const double B_ = 1825 / 1000.0;                   --- GAMESA
-            //const double E_ = 2397 / 1000.0;
-            //double a1 = CP.FMB.Arm_a / 1000.0;
-            //const double b1 = 185 / 1000.0;
-            //double a2 = CP.RMB.Arm_a / 1000.0;
-            //const double b2 = 150 / 1000.0;
-            //double A = a1 - b1 / 2.0;
-            //double B = B_ + a2 - b2 / 2.0;
-            //const double C = 637.5 / 1000.0;
-            //double E = E_ - a2 + b2 / 2.0;
+            //const double A = 2330 / 1000.0;   // ---- Nanjing
+            //const double B = 2380 / 1000.0;
+            //const double C = 1735 / 1000.0;
+            //double a = CP.FMB.Arm_a / 1000.0;
+            //const double b = 176 / 1000.0;
+            //double E = a - b / 2.0;
+            //double D = A - E;
+            //const double F = 585 / 1000.0;
+            //double G = E;
+            //double H = C - G;
             //double FgShaftZ = -CP.FgShaft * MV.MathOperation.Cosd(6);
             //double FgGearboxZ = -CP.FgGearbox * MV.MathOperation.Cosd(6);
+            const double B_ = 1825 / 1000.0;    // --- GAMESA
+            const double E_ = 2397 / 1000.0;
+            double a1 = CP.FMB.Arm_a / 1000.0;
+            const double b1 = 185 / 1000.0;
+            double a2 = CP.RMB.Arm_a / 1000.0;
+            const double b2 = 150 / 1000.0;
+            double A = a1 - b1 / 2.0;
+            double B = B_ + a2 - b2 / 2.0;
+            const double C = 637.5 / 1000.0;
+            double E = E_ - a2 + b2 / 2.0;
+            double FgShaftZ = -CP.FgShaft * MV.MathOperation.Cosd(6);
+            double FgGearboxZ = -CP.FgGearbox * MV.MathOperation.Cosd(6);
             foreach (LoadCase loadCase in loadCases)
             {
                 foreach (LoadState loadState in loadCase.LoadStates)
                 {
-                    double Fy1 = -loadState.FY - (-loadState.MZ + loadState.FY * D) / (A + B + G - D); // Nanjing
-                    double Fy2 = (-loadState.MZ + loadState.FY * D) / (A + B + G - D);
-                    double Fz2 = (-loadState.MY - (FgShaftZ + FgGearboxZ + loadState.FZ) * D + FgShaftZ * (A + F) + FgGearboxZ * (A + B + C)) / (D - A - B - G);
-                    double Fz1 = -FgShaftZ - FgGearboxZ - loadState.FZ - Fz2;
+                    //double Fy1 = -loadState.FY - (-loadState.MZ + loadState.FY * D) / (A + B + G - D); // --- Nanjing
+                    //double Fy2 = (-loadState.MZ + loadState.FY * D) / (A + B + G - D);
+                    //double Fz2 = (-loadState.MY - (FgShaftZ + FgGearboxZ + loadState.FZ) * D + FgShaftZ * (A + F) + FgGearboxZ * (A + B + C)) / (D - A - B - G);
+                    //double Fz1 = -FgShaftZ - FgGearboxZ - loadState.FZ - Fz2;
 
-                    //double Fy1 = -loadState.FY + (loadState.MZ + loadState.FY * A) / (A + B);                         --- GAMESA
-                    //double Fy2 = (-loadState.MZ - loadState.FY * A) / (A + B);
-                    //double Fz2 = (loadState.MY - loadState.FZ * A - FgShaftZ * (A + C) - FgGearboxZ * (A + B + E)) / (A + B);
-                    //double Fz1 = -loadState.FZ - FgShaftZ - Fz2 - FgGearboxZ;
+                    double Fy1 = -loadState.FY + (loadState.MZ + loadState.FY * A) / (A + B);                        // --- GAMESA
+                    double Fy2 = (-loadState.MZ - loadState.FY * A) / (A + B);
+                    double Fz2 = (loadState.MY - loadState.FZ * A - FgShaftZ * (A + C) - FgGearboxZ * (A + B + E)) / (A + B);
+                    double Fz1 = -loadState.FZ - FgShaftZ - Fz2 - FgGearboxZ;
                     double Fr1 = MV.MathOperation.LengthOfHypotenuse(Fy1, Fz1);
                     double Fr2 = MV.MathOperation.LengthOfHypotenuse(Fy2, Fz2);
                     loadState.FMBState = new BearingState()
@@ -339,18 +378,29 @@ namespace WindDataProcessing
         /// <returns></returns>
         private async Task CalculateAxialReactions(List<LoadCase> loadCases)
         {
+            AxialReactionCalculator axialReactionCalculator = new AxialReactionCalculator(StiffnessFMBDataFilePath, StiffnessRMBDataFilePath);
             foreach (LoadCase loadCase in loadCases)
             {
+                int loadStateNumber = 0;
                 foreach (LoadState loadState in loadCase.LoadStates)
                 {
                     // V první řadě se vypočíta suma vnějších axiálních sil, které půosbí na hřídeli:
                     double sumFa = loadState.FX + CP.FgShaft * MV.MathOperation.Sind(6) + CP.FgGearbox * MV.MathOperation.Sind(6);
                     // Dále se pak axiální reakce řeší v rámci samostatné třídy AxialReactionCalculator:
-                    AxialReactionCalculator axialReactionCalculator = new AxialReactionCalculator(StiffnessFMBDataFilePath, StiffnessRMBDataFilePath);
-                    double FaFMB = axialReactionCalculator.CaluclateFaFMB(loadState.FMBState.FR, loadState.RMBState.FR, sumFa);
+                    double FaFMB;
+                    try
+                    {
+                        FaFMB = axialReactionCalculator.CaluclateFaFMB(loadState.FMBState.FR, loadState.RMBState.FR, sumFa);
+                    }
+                    catch (Exception)
+                    {
+                        Console.Write($"Problem occured at LC: {loadCase.Name}, LS: {loadStateNumber}.");
+                        throw;
+                    }
                     double FaRMB = FaFMB - sumFa;
                     loadState.FMBState.FA = FaFMB;
                     loadState.RMBState.FA = FaRMB;
+                    loadStateNumber++;
                 }
                 Console.Write($"\rLoad case {loadCase.Position} axial reaction calculation finished.     ");
             }

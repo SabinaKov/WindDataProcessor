@@ -22,7 +22,10 @@ namespace WindDataProcessing
         /// FZ [N]
         /// </summary>
         internal double FZ { get; set; }
-
+        /// <summary>
+        /// MX [Nm]
+        /// </summary>
+        internal double MX { get; set; }
         /// <summary>
         /// MY [Nm]
         /// </summary>

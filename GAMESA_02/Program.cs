@@ -47,6 +47,22 @@ namespace GAMESA_02
                             @"C:\Users\miroslav.vaculka\source\repos\Mirabass\WindDataProcessor\GAMESA_02\Test\Verifikace",
                             @"",
                             @""
+                        )},
+                    { 5, new Tuple<string, string, string, string, string>
+                        (
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\komplexní výpočet\CALC\PRJ-7159.csv",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\Gamesa zadání\Time_series_PRJ-7159_SAR-0899-FY21 JAGALUR",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\komplexní výpočet\CALC",
+                            @"",
+                            @""
+                        )},
+                    { 6, new Tuple<string, string, string, string, string>
+                        (
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\komplexní výpočet\CALC\PRJ-7179.csv",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\Gamesa zadání\Time_series_PRJ-7176_SAR-0907-FY21 TONDIHAL",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\komplexní výpočet\CALC",
+                            @"",
+                            @""
                         )}
                 };
 
@@ -55,7 +71,7 @@ namespace GAMESA_02
             try
             {
                 Console.WriteLine("Path to the CSV file with Load Case Time Shares: ");
-                const int choosedSettings = 3;
+                const int choosedSettings = 5;
                 string loadCasesTimeShareFilePath = pathSettings[choosedSettings].Item1;
                 Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
                 Console.WriteLine("Path to the Project Directory: ");
@@ -69,15 +85,15 @@ namespace GAMESA_02
                 DataProcessor dataProcessor = new DataProcessor(loadCasesTimeShareFilePath, projectDirectoryPath, resultsDirectoryPath, stifnessesFMBFilePath, stifnessesRMBFilePath)
                 {
                     SourceDataType = Enums.SourceDataType.TXT,
-                    SourceDataFirstLine = 3,
+                    SourceDataFirstLine = 1,
                 };
-                dataProcessor.SourceDataColumn.FX = 3;//2
-                dataProcessor.SourceDataColumn.FY = 4;//3
-                dataProcessor.SourceDataColumn.FZ = 5;//5
-                dataProcessor.SourceDataColumn.MX = 6;//7
-                dataProcessor.SourceDataColumn.MY = 7;//9
-                dataProcessor.SourceDataColumn.MZ = 8;//9
-                dataProcessor.SourceDataColumn.Speed = 2;//11
+                dataProcessor.SourceDataColumn.FX = 1;//2
+                dataProcessor.SourceDataColumn.FY = 2;//3
+                dataProcessor.SourceDataColumn.FZ = 3;//5
+                dataProcessor.SourceDataColumn.MX = 4;//7
+                dataProcessor.SourceDataColumn.MY = 5;//9
+                dataProcessor.SourceDataColumn.MZ = 6;//9
+                dataProcessor.SourceDataColumn.Speed = 7;//11
                 dataProcessor.NumberOfLevels = 144;
 
                 dataProcessor.CP = new CalculationParametersCollection()

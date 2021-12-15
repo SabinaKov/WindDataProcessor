@@ -1,6 +1,7 @@
 ﻿using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -199,7 +200,7 @@ namespace WindDataProcessing
                     loadCases.Add(new LoadCase
                     {
                         Position = loadCaseNumerator++,
-                        Name = timeShareItem.Value
+                        Name = timeShareItem.Value.ToLower()
                     });
                 }
                 else if (timeShareItem.Key.Item2 == 1)
@@ -290,7 +291,7 @@ namespace WindDataProcessing
                     {
                         foreach (LoadCase loadCase in loadCasesWithoutLoadStates)
                         {
-                            string loadCaseFilePath = ProjectDirectoryPath + @"\" + loadCase.Name + ".txt";
+                            string loadCaseFilePath = ProjectDirectoryPath + @"\" + loadCase.Name.ToLower() + ".txt";
                             Dictionary<Tuple<int, int>, string> loadStateData = MV.FileProcessor.LoadDataFromFile_tableWithTabs(loadCaseFilePath);
                             List<LoadState> loadStates = new List<LoadState>();
                             int lastRow = loadStateData.Select(_ => _.Key.Item1).Max() + 1;
@@ -299,13 +300,13 @@ namespace WindDataProcessing
                             {
                                 loadStates.Add(new LoadState
                                 {
-                                    FX = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FX - 1)]),
-                                    FY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FY - 1)]),
-                                    FZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FZ - 1)]),
-                                    MX = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MX - 1)]),
-                                    MY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MY - 1)]),
-                                    MZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ - 1)]),
-                                    Speed = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.Speed - 1)]) * ConvertSpeedMultiplyBy
+                                    FX = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FX - 1)],CultureInfo.InvariantCulture),
+                                    FY = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FY - 1)],CultureInfo.InvariantCulture),
+                                    FZ = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FZ - 1)],CultureInfo.InvariantCulture),
+                                    MX = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MX - 1)],CultureInfo.InvariantCulture),
+                                    MY = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MY - 1)],CultureInfo.InvariantCulture),
+                                    MZ = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ - 1)], CultureInfo.InvariantCulture),
+                                    Speed = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.Speed - 1)], CultureInfo.InvariantCulture) * ConvertSpeedMultiplyBy
                                 });
                             }
                             loadCase.LoadStates = loadStates;

@@ -63,6 +63,30 @@ namespace GAMESA_02
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\komplexní výpočet\CALC",
                             @"",
                             @""
+                        )},
+                    { 7, new Tuple<string, string, string, string, string>
+                        (
+                            @"C:\Users\sabina.kovarikova\source\repos\WindDataProcessor\WindDataProcessing\TestovaciData\PRJ1.csv",
+                            @"C:\Users\sabina.kovarikova\source\repos\WindDataProcessor\WindDataProcessing\TestovaciData\PRJ1",
+                            @"C:\Users\sabina.kovarikova\source\repos\WindDataProcessor\WindDataProcessing\TestovaciData",
+                            @"",
+                            @""
+                        )},
+                    { 8, new Tuple<string, string, string, string, string>
+                        (
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\komplexní výpočet\CALC\PRJ-7479.csv",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\Gamesa zadání\Time Series PRJ-7479 N system",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\komplexní výpočet\CALC",
+                            @"",
+                            @""
+                        )},
+                    { 9, new Tuple<string, string, string, string, string>
+                        (
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\komplexní výpočet\CALC\PRJ-7480.csv",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\Gamesa zadání\Time Series PRJ-7480 N system",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\komplexní výpočet\CALC",
+                            @"",
+                            @""
                         )}
                 };
 
@@ -71,7 +95,7 @@ namespace GAMESA_02
             try
             {
                 Console.WriteLine("Path to the CSV file with Load Case Time Shares: ");
-                const int choosedSettings = 5;
+                const int choosedSettings = 9;
                 string loadCasesTimeShareFilePath = pathSettings[choosedSettings].Item1;
                 Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
                 Console.WriteLine("Path to the Project Directory: ");

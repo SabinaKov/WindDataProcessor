@@ -23,6 +23,7 @@ namespace WindDataProcessing
         /// [N]
         /// </summary>
         public double AxialPreload { get; set; }
+        public double ShaftTiltAngle { get; set; }
 
         public BearingParametersColection FMB { get; set; }
         public BearingParametersColection RMB { get; set; }
@@ -52,8 +53,9 @@ namespace WindDataProcessing
             }
         }
 
-        internal double Y1 { get; set; }
-
+        public double Y1 { get; set; }
+        public double Y2 { get; set; }
+        public double e { get; set; }
         /// <summary>
         /// Počet valivých elementů
         /// </summary>

@@ -1,6 +1,7 @@
 ﻿using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -81,6 +82,30 @@ namespace WindDataProcessing
             Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
             Console.Beep();
         }
+        /// <summary>
+        /// Vypočítá reakce v sestavě dvou soudečkových ložisek
+        /// </summary>
+        /// <returns></returns>
+        public async Task SphericalBearingsReactions()
+        {
+            Console.WriteLine("Process started!");
+            // V první řadě je třeba načíst data z disku do RAM.
+            // Nejdřív se připraví List of Load Case na základě seznamu Load Case:
+            List<LoadCase> loadCasesWithoutLoadStates = LoadLoadCaseData();
+            // Následně se do Listu Load Case načtou jednotivé zátěžné stavy (Load State):
+            List<LoadCase> loadCases = await PopulateLoadCasesWithLoadStatesAsync(loadCasesWithoutLoadStates);
+            await CalculateSphericalBearingsReactions(loadCases);
+            await CalculateEquivalentForces(loadCases);
+            await CalculateLoadCaseAverageSpeeds(loadCases);
+            List<List<string>> exportData = PrepareDataToExport(loadCases);
+            MV.FileProcessor.ExportCSV(exportData, ResultsDirectoryPath, @"results");
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine("Hotovo.");
+            Console.WriteLine();
+            Console.WriteLine($"Elapsed time: {MV.SystemProcessor.GetElapsedTimeSinceApplicationStarted()}");
+            Console.Beep();
+        }
 
         public async Task Process()
         {
@@ -128,47 +153,40 @@ namespace WindDataProcessing
 
         private List<List<string>> PrepareDataToExport(List<LoadCase> loadCases)
         {
-            List<string> nameRow = new List<string>();
-            List<string> FReqFMBRow = new List<string>();
-            List<string> FAeqFMBRow = new List<string>();
-            List<string> FReqRMBRow = new List<string>();
-            List<string> FAeqRMBRow = new List<string>();
-            List<string> NoFirstConditionRow = new List<string>();
-            List<string> NoSecondConditionRow = new List<string>();
-            List<string> NoThirdConditionRow = new List<string>();
-            List<string> NoFourthConditionRow = new List<string>();
-            List<string> NoFifthConditionRow = new List<string>();
-            List<string> NoSixthConditionRow = new List<string>();
+            List<string> nameRow = new List<string>
+            { "Name of load case" };
+            List<string> avarageSpeed = new List<string>
+            { "Avarage speed" };
+            List<string> FReqFMBRow = new List<string>
+            { "FR FMB" };
+            List<string> FAeqFMBRow = new List<string>
+            { "FA FMB" };
+            List<string> FReqRMBRow = new List<string>
+            { "FR RMB" };
+            List<string> FAeqRMBRow = new List<string>
+            { "FA RMB" }; 
             foreach (LoadCase loadCase in loadCases)
             {
                 nameRow.Add(loadCase.Name);
+                avarageSpeed.Add(loadCase.AverageSpeed.ToString());
                 FReqFMBRow.Add(loadCase.FReqFMB.ToString());
                 FAeqFMBRow.Add(loadCase.FAeqFMB.ToString());
                 FReqRMBRow.Add(loadCase.FReqRMB.ToString());
                 FAeqRMBRow.Add(loadCase.FAeqRMB.ToString());
-                NoFirstConditionRow.Add(loadCase.NoFirstCondition.ToString());
-                NoSecondConditionRow.Add(loadCase.NoSecondCondition.ToString());
-                NoThirdConditionRow.Add(loadCase.NoThirdCondition.ToString());
-                NoFourthConditionRow.Add(loadCase.NoFourthCondition.ToString());
-                NoFifthConditionRow.Add(loadCase.NoFifthCondition.ToString());
-                NoSixthConditionRow.Add(loadCase.NoSixthCondition.ToString());
             }
             List<List<string>> data = new List<List<string>>
             {
                 nameRow,
+                avarageSpeed,
                 FReqFMBRow,
                 FAeqFMBRow,
                 FReqRMBRow,
-                FAeqRMBRow,
-                NoFirstConditionRow,
-                NoSecondConditionRow,
-                NoThirdConditionRow,
-                NoFourthConditionRow,
-                NoFifthConditionRow,
-                NoSixthConditionRow
+                FAeqRMBRow
             };
             return data;
         }
+
+
 
         private List<LoadCase> LoadLoadCaseData()
         {
@@ -182,7 +200,7 @@ namespace WindDataProcessing
                     loadCases.Add(new LoadCase
                     {
                         Position = loadCaseNumerator++,
-                        Name = timeShareItem.Value
+                        Name = timeShareItem.Value.ToLower()
                     });
                 }
                 else if (timeShareItem.Key.Item2 == 1)
@@ -273,7 +291,7 @@ namespace WindDataProcessing
                     {
                         foreach (LoadCase loadCase in loadCasesWithoutLoadStates)
                         {
-                            string loadCaseFilePath = ProjectDirectoryPath + @"\" + loadCase.Name + ".txt";
+                            string loadCaseFilePath = ProjectDirectoryPath + @"\" + loadCase.Name.ToLower() + ".txt";
                             Dictionary<Tuple<int, int>, string> loadStateData = MV.FileProcessor.LoadDataFromFile_tableWithTabs(loadCaseFilePath);
                             List<LoadState> loadStates = new List<LoadState>();
                             int lastRow = loadStateData.Select(_ => _.Key.Item1).Max() + 1;
@@ -282,12 +300,13 @@ namespace WindDataProcessing
                             {
                                 loadStates.Add(new LoadState
                                 {
-                                    FX = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FX - 1)]),
-                                    FY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FY - 1)]),
-                                    FZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FZ - 1)]),
-                                    MY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MY - 1)]),
-                                    MZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ - 1)]),
-                                    Speed = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.Speed - 1)]) * ConvertSpeedMultiplyBy
+                                    FX = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FX - 1)],CultureInfo.InvariantCulture),
+                                    FY = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FY - 1)],CultureInfo.InvariantCulture),
+                                    FZ = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FZ - 1)],CultureInfo.InvariantCulture),
+                                    MX = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MX - 1)],CultureInfo.InvariantCulture),
+                                    MY = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MY - 1)],CultureInfo.InvariantCulture),
+                                    MZ = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ - 1)], CultureInfo.InvariantCulture),
+                                    Speed = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.Speed - 1)], CultureInfo.InvariantCulture) * ConvertSpeedMultiplyBy
                                 });
                             }
                             loadCase.LoadStates = loadStates;
@@ -341,10 +360,6 @@ namespace WindDataProcessing
             {
                 foreach (LoadState loadState in loadCase.LoadStates)
                 {
-                    //double Fy1 = -loadState.FY - (-loadState.MZ + loadState.FY * D) / (A + B + G - D); // --- Nanjing
-                    //double Fy2 = (-loadState.MZ + loadState.FY * D) / (A + B + G - D);
-                    //double Fz2 = (-loadState.MY - (FgShaftZ + FgGearboxZ + loadState.FZ) * D + FgShaftZ * (A + F) + FgGearboxZ * (A + B + C)) / (D - A - B - G);
-                    //double Fz1 = -FgShaftZ - FgGearboxZ - loadState.FZ - Fz2;
 
                     double Fy1 = -loadState.FY + (loadState.MZ + loadState.FY * A) / (A + B);                        // --- GAMESA
                     double Fy2 = (-loadState.MZ - loadState.FY * A) / (A + B);
@@ -368,7 +383,49 @@ namespace WindDataProcessing
             }
             await Task.WhenAll();
         }
-
+        /// <summary>
+        /// Odvozeno z rovnic statické rovnováhy
+        /// </summary>
+        /// <param name="loadCases"></param>
+        /// <returns></returns>
+        private async Task CalculateSphericalBearingsReactions(List<LoadCase> loadCases)
+        {
+                double L1 = 2.166;
+                double L2 = 1.55;
+                double L3 = 2.0025;
+                double L4 = 0.3;
+                double FSA = CP.FgShaft * MV.MathOperation.Sind(CP.ShaftTiltAngle);
+                double FGA = CP.FgGearbox * MV.MathOperation.Sind(CP.ShaftTiltAngle);
+                double FSR = CP.FgShaft * MV.MathOperation.Cosd(CP.ShaftTiltAngle);
+                double FGR = CP.FgGearbox * MV.MathOperation.Cosd(CP.ShaftTiltAngle);
+                foreach (LoadCase loadCase in loadCases)
+                {
+                    foreach (LoadState loadState in loadCase.LoadStates)
+                    {
+                        double FX_RMB = loadState.FX + FSA + FGA;//(-loadState.MY + loadState.FX * L1 - FSR * L4 - FGR * L3) / L2;
+                        double FY_RMB = loadState.MZ / L2; //(loadState.MX + loadState.FY * L1) / L2;
+                        double FZ_RMB = (loadState.MY + FSR * L4 + FGR * (L2 + L3)) / L2;   //0;
+                        double FX_FMB = 0; // FX_RMB + loadState.FX + FSR + FGR;
+                        double FY_FMB = FY_RMB - loadState.FY;  //loadState.FY + FY_RMB;
+                        double FZ_FMB = (FSR + FGR) - loadState.FZ - FZ_RMB;   // loadState.FZ + FSA + FGA;
+                        double FR_FMB = MV.MathOperation.LengthOfHypotenuse(FY_FMB, FZ_FMB);
+                        double FA_FMB = Math.Abs(FX_FMB);
+                        double FR_RMB = MV.MathOperation.LengthOfHypotenuse(FY_RMB, FZ_RMB);
+                        double FA_RMB = Math.Abs(FX_RMB);
+                        loadState.FMBState = new BearingState()
+                            {
+                                FR = FR_FMB,
+                                FA = FA_FMB
+                            };
+                        loadState.RMBState = new BearingState()
+                            {
+                                FR = FR_RMB,
+                                FA = FA_RMB
+                            };
+                    }
+                }
+                await Task.WhenAll();
+        }
         /// <summary>
         /// Výpočet axiálních reakcí zohledňuje, že ložiska jsou k sobě předepjata známou hodnotou silového předpětí.
         /// Zároveň počítá a zohledňuje axiální sílu, která se generuje působením radiální síly.

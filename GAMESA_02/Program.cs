@@ -94,7 +94,7 @@ namespace GAMESA_02
                 dataProcessor.SourceDataColumn.MY = 5;//9
                 dataProcessor.SourceDataColumn.MZ = 6;//9
                 dataProcessor.SourceDataColumn.Speed = 7;//11
-                dataProcessor.NumberOfLevels = 144;
+                dataProcessor.NumberOfLevels = 144; // Tvorba LDD
 
                 dataProcessor.CP = new CalculationParametersCollection()
                 {

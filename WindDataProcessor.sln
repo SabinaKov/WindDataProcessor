@@ -13,7 +13,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChinaVerification_01", "Chi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NanjingWP_01", "NanjingWP_01\NanjingWP_01.csproj", "{F4F21071-C502-4F86-8BFE-29331EC87AED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GAMESA_02", "GAMESA_02\GAMESA_02.csproj", "{E58D283D-12B0-4325-9844-C942C29DA7EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GAMESA_02", "GAMESA_02\GAMESA_02.csproj", "{E58D283D-12B0-4325-9844-C942C29DA7EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeibullDistribution", "WeibullDistribution\WeibullDistribution.csproj", "{3138A0ED-2850-45E7-BC73-6F8126F45AB6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A5E01D0C-AC53-4C75-A18A-CC332E212248} = {A5E01D0C-AC53-4C75-A18A-CC332E212248}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +50,10 @@ Global
 		{E58D283D-12B0-4325-9844-C942C29DA7EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E58D283D-12B0-4325-9844-C942C29DA7EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E58D283D-12B0-4325-9844-C942C29DA7EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3138A0ED-2850-45E7-BC73-6F8126F45AB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3138A0ED-2850-45E7-BC73-6F8126F45AB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3138A0ED-2850-45E7-BC73-6F8126F45AB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3138A0ED-2850-45E7-BC73-6F8126F45AB6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

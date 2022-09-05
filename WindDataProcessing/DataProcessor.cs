@@ -277,7 +277,7 @@ namespace WindDataProcessing
                                     FZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.FZ - 1)]),
                                     MY = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MY - 1)]),
                                     MZ = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ - 1)]),
-                                    Speed = Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.Speed - 1)]) * ConvertSpeedMultiplyBy
+                                    Speed = Math.Abs(Convert.ToDouble(loadStateData[new Tuple<int, int>(row, SourceDataColumn.Speed - 1)]) * ConvertSpeedMultiplyBy)
                                 });
                             }
                             loadCase.LoadStates = loadStates;
@@ -306,7 +306,7 @@ namespace WindDataProcessing
                                     MX = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MX - 1)],CultureInfo.InvariantCulture),
                                     MY = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MY - 1)],CultureInfo.InvariantCulture),
                                     MZ = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.MZ - 1)], CultureInfo.InvariantCulture),
-                                    Speed = double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.Speed - 1)], CultureInfo.InvariantCulture) * ConvertSpeedMultiplyBy
+                                    Speed = Math.Abs(double.Parse(loadStateData[new Tuple<int, int>(row, SourceDataColumn.Speed - 1)], CultureInfo.InvariantCulture) * ConvertSpeedMultiplyBy)
                                 });
                             }
                             loadCase.LoadStates = loadStates;
@@ -513,6 +513,17 @@ namespace WindDataProcessing
 
         private async Task CalculateLoadCaseAverageSpeeds(List<LoadCase> loadCases)
         {
+            //foreach (var loadCase in loadCases)
+            //{
+            //    double SumSpeed = 0;
+            //    foreach (var loadState in loadCase.LoadStates)
+            //    {
+            //        double absSpeed = Math.Abs(loadState.Speed);
+            //        SumSpeed += absSpeed;
+            //    }
+            //    double avgSpeed = SumSpeed / loadCase.LoadStates.Count;
+            //    loadCase.AverageSpeed = avgSpeed;
+            //}
             loadCases.ForEach(loadCase => loadCase.AverageSpeed = loadCase.LoadStates.Select(loadState => loadState.Speed).Average());
             await Task.WhenAll();
         }

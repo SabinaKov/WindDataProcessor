@@ -87,6 +87,14 @@ namespace WeibullDistribution
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\komplexní výpočet\CALC",
                             @"",
                             @""
+                        )},
+                    { 10, new Tuple<string, string, string, string, string>
+                        (
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG145_4.2-5.0MW\SG4.X MKII\PRJ-5411\Komplexní výpočet\CALC\PRJ-5411.csv",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG145_4.2-5.0MW\návrh_4X_novy_koncept\zadání\PRJ-5411\TIMESERIES",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG145_4.2-5.0MW\SG4.X MKII\PRJ-5411\komplexní výpočet\CALC",
+                            @"",
+                            @""
                         )}
                 };
 
@@ -95,7 +103,7 @@ namespace WeibullDistribution
                 try
                 {
                     Console.WriteLine("Path to the CSV file with Load Case Time Shares: ");
-                    const int choosedSettings = 1;
+                    const int choosedSettings = 10;
                     string loadCasesTimeShareFilePath = pathSettings[choosedSettings].Item1;
                     Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
                     Console.WriteLine("Path to the Project Directory: ");

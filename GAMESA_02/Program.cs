@@ -87,6 +87,14 @@ namespace GAMESA_02
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\komplexní výpočet\CALC",
                             @"",
                             @""
+                        )},
+                    { 10, new Tuple<string, string, string, string, string>
+                        (
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG145_4.2-5.0MW\SG4.X MKII\PRJ-5411\Komplexní výpočet\CALC\PRJ-5411.csv",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG145_4.2-5.0MW\návrh_4X_novy_koncept\zadání\PRJ-5411\TIMESERIES",
+                            @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG145_4.2-5.0MW\SG4.X MKII\PRJ-5411\komplexní výpočet\CALC",
+                            @"",
+                            @""
                         )}
                 };
 
@@ -95,7 +103,7 @@ namespace GAMESA_02
             try
             {
                 Console.WriteLine("Path to the CSV file with Load Case Time Shares: ");
-                const int choosedSettings = 9;
+                const int choosedSettings = 10;
                 string loadCasesTimeShareFilePath = pathSettings[choosedSettings].Item1;
                 Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
                 Console.WriteLine("Path to the Project Directory: ");
@@ -108,16 +116,16 @@ namespace GAMESA_02
                 string stifnessesRMBFilePath = pathSettings[choosedSettings].Item5;
                 DataProcessor dataProcessor = new DataProcessor(loadCasesTimeShareFilePath, projectDirectoryPath, resultsDirectoryPath, stifnessesFMBFilePath, stifnessesRMBFilePath)
                 {
-                    SourceDataType = Enums.SourceDataType.TXT,
-                    SourceDataFirstLine = 1,
+                    SourceDataType = Enums.SourceDataType.CSV,
+                    SourceDataFirstLine = 19,
                 };
                 dataProcessor.SourceDataColumn.FX = 1;//2
                 dataProcessor.SourceDataColumn.FY = 2;//3
-                dataProcessor.SourceDataColumn.FZ = 3;//5
-                dataProcessor.SourceDataColumn.MX = 4;//7
-                dataProcessor.SourceDataColumn.MY = 5;//9
-                dataProcessor.SourceDataColumn.MZ = 6;//9
-                dataProcessor.SourceDataColumn.Speed = 7;//11
+                dataProcessor.SourceDataColumn.FZ = 4;//5
+                dataProcessor.SourceDataColumn.MX = 5;//7
+                dataProcessor.SourceDataColumn.MY = 6;//9
+                dataProcessor.SourceDataColumn.MZ = 8;//9
+                dataProcessor.SourceDataColumn.Speed = 10;//11
                 dataProcessor.NumberOfLevels = 144; // Tvorba LDD
 
                 dataProcessor.CP = new CalculationParametersCollection()

@@ -90,7 +90,7 @@ namespace MV
 
         public static Dictionary<Tuple<int, int>, string> LoadDataFromFile_tableWithTabs(string filePath)
         {
-            return LoadTableDataFromFile(filePath, '\t');
+            return LoadTableDataFromFile(filePath, ',');
         }
 
         public static void ExportCSV(List<List<string>> exportTabulka, string pracovniAdresar, string nazevSouboru)

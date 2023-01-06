@@ -63,6 +63,22 @@ namespace GAMESA_02
                             @"\\brn-fs-01\DATA _ZKL\Data\ZKL VaV\ZKL_dokumenty\PROJEKTY\Spanelsko\Gamesa - loziska hlavniho hridele\SG3.X CALULATION OF BEARINGS AGAINST 2 WINDFARM FATIGUE LOADS\komplexní výpočet\CALC",
                             @"",
                             @""
+                        )},
+                    { 7, new Tuple<string, string, string, string, string>
+                        (
+                            @"D:\Sabina\2022\WindDataProcessor\DP\PRJ-2310\WeibullDistribution_PRJ-2310.csv",
+                            @"D:\Sabina\2022\WindDataProcessor\DP\PRJ-2310\PRJ-2310_TIMESERIES",
+                            @"D:\Sabina\2022\WindDataProcessor\DP\PRJ-2310",
+                            @"",
+                            @""
+                        )},
+                    { 8, new Tuple<string, string, string, string, string>
+                        (
+                            @"D:\Sabina\2023\WindDataProcessor\C-7_9-LA_DI_01\Senvion_weibull_distribution.csv",
+                            @"D:\Sabina\2023\WindDataProcessor\C-7_9-LA_DI_01\LC_LDD",
+                            @"D:\Sabina\2023\WindDataProcessor\C-7_9-LA_DI_01",
+                            @"",
+                            @""
                         )}
                 };
 
@@ -71,7 +87,7 @@ namespace GAMESA_02
             try
             {
                 Console.WriteLine("Path to the CSV file with Load Case Time Shares: ");
-                const int choosedSettings = 5;
+                const int choosedSettings = 8;
                 string loadCasesTimeShareFilePath = pathSettings[choosedSettings].Item1;
                 Console.WriteLine($"You set: {loadCasesTimeShareFilePath}");
                 Console.WriteLine("Path to the Project Directory: ");
@@ -87,13 +103,13 @@ namespace GAMESA_02
                     SourceDataType = Enums.SourceDataType.TXT,
                     SourceDataFirstLine = 1,
                 };
-                dataProcessor.SourceDataColumn.FX = 1;//2
-                dataProcessor.SourceDataColumn.FY = 2;//3
-                dataProcessor.SourceDataColumn.FZ = 3;//5
-                dataProcessor.SourceDataColumn.MX = 4;//7
-                dataProcessor.SourceDataColumn.MY = 5;//9
-                dataProcessor.SourceDataColumn.MZ = 6;//9
-                dataProcessor.SourceDataColumn.Speed = 7;//11
+                dataProcessor.SourceDataColumn.FX = 12;//2
+                dataProcessor.SourceDataColumn.FY = 13;//3
+                dataProcessor.SourceDataColumn.FZ = 14;//5
+                dataProcessor.SourceDataColumn.MX = 9;//7
+                dataProcessor.SourceDataColumn.MY = 10;//9
+                dataProcessor.SourceDataColumn.MZ = 11;//9
+                dataProcessor.SourceDataColumn.Speed = 15;//11
                 dataProcessor.NumberOfLevels = 144;
 
                 dataProcessor.CP = new CalculationParametersCollection()
@@ -130,9 +146,9 @@ namespace GAMESA_02
                 };
                 //await dataProcessor.FindMinMaxRadialReactions();
                 //await dataProcessor.BearingReactions();
-                await dataProcessor.SphericalBearingsReactions();
+                //await dataProcessor.SphericalBearingsReactions();
                 //await dataProcessor.LDDlifesTester(); //- Vývoj
-                //await dataProcessor.Process(); - vytvoří LDD
+                await dataProcessor.Process(); //-vytvoří LDD
             }
             catch (Exception ex)
             {
